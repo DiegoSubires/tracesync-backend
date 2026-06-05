@@ -19,12 +19,16 @@ const router = express.Router();
 const authMiddleware = require("../middleware/auth.middleware");
 
 const authRoutes = require("./auth.routes");
+const tenantRoutes = require("./tenant.routes");
+const productRoutes = require("./product.routes");
 const inventoryRoutes = require("./inventory.routes");
 
 // Rutas públicas (Login)
 router.use(authRoutes);
+router.use(tenantRoutes);
 
 // Rutas protegidas (El middleware se ejecuta antes de llegar al inventario)
 router.use("/inventory", authMiddleware, inventoryRoutes);
+router.use("/products", authMiddleware, productRoutes);
 
 module.exports = router;
