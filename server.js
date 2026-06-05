@@ -22,17 +22,16 @@ const PORT = process.env.PORT || 4000;
 
 async function startServer() {
   try {
-    // 1. Garantizar conexiones a Atlas antes de abrir el puerto
+    console.log("⏳ Conectando a MongoDB...");
     await connectDB();
+    console.log("✅ Conectado a MongoDB");
 
-    // 2. Escuchar peticiones en el puerto asignado
     app.listen(PORT, () => {
-      console.log(
-        `🚀 Servidor TraceSync corriendo de forma estable en el puerto ${PORT}`,
-      );
+      console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
     });
   } catch (error) {
-    console.error("❌ Error fatal al iniciar el servidor:", error);
+    // ESTO ES LO QUE NECESITAMOS VER
+    console.error("❌ ERROR CRÍTICO AL ARRANCAR:", error);
     process.exit(1);
   }
 }
