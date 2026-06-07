@@ -17,6 +17,7 @@ const whitelist = [
   "http://localhost:5174",
   "http://localhost:5175",
   "https://diegosubires.github.io",
+  "https://diegosubires.github.io/tracesync-hub/",
 ];
 
 const corsOptions = {
