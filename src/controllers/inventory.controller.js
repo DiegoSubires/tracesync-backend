@@ -246,10 +246,11 @@ exports.finalizeCount = async (req, res) => {
   }
 };*/
 
+// backend/controllers/inventory.controller.js
 const InventoryModel = require("../models/inventory.model");
 const { getDbTenant } = require("../config/db");
 
-// 1a. Obtener catálogo cruzado con recuentos activos
+// 1. Obtener catálogo cruzado con recuentos activos
 exports.getProductsWithCounts = async (req, res) => {
   try {
     const { date } = req.query;
@@ -265,8 +266,7 @@ exports.getProductsWithCounts = async (req, res) => {
     const collections =
       await InventoryModel.getDynamicCollectionNames(tenantId);
     console.log(
-      `📊 [Aggregation] Resultado para el día: ${date}`,
-      aggregatedProducts,
+      `📊 [Aggregation] Consultando catálogo [${collections.productsCollection}] mediante capa de modelo para el día: ${date}`,
     );
 
     const aggregatedProducts = await InventoryModel.getProductsWithActiveCounts(
@@ -279,72 +279,6 @@ exports.getProductsWithCounts = async (req, res) => {
     return res
       .status(500)
       .json({ error: err.message || "Error al sincronizar recuentos" });
-  }
-};
-
-// 1b. Obtener un producto del catálogo cruzado con recuentos activos
-/*exports.getProductWithCountsById = async (req, res) => {
-  try {
-    const { date } = req.query;
-    const tenantId = req.query.tenantId || req.query.tenant;
-    const { productId } = req.params; // Obtenemos el ID de la ruta
-
-    if (!tenantId || !date || !productId) {
-      return res
-        .status(400)
-        .json({ error: "tenantId, date y productId son obligatorios" });
-    }
-
-    console.log(
-      `📊 [Aggregation] Consultando detalle producto [${productId}] para el día: ${date}`,
-    );
-
-    // Llamamos al modelo pasando el productId extra
-    const result = await InventoryModel.getProductsWithActiveCounts(
-      tenantId,
-      date,
-      productId,
-    );
-
-    // Si el resultado es un array vacío, devolvemos 404
-    if (!result || (Array.isArray(result) && result.length === 0)) {
-      return res.status(404).json({ error: "Producto no encontrado" });
-    }
-
-    // Retornamos el primer elemento (ya que filtramos por ID)
-    const product = Array.isArray(result) ? result[0] : result;
-
-    return res.json(product);
-  } catch (err) {
-    console.error("❌ Error en getProductWithCountsById:", err);
-    return res
-      .status(500)
-      .json({ error: err.message || "Error al obtener el producto" });
-  }
-};*/
-exports.getProductWithCountsById = async (req, res) => {
-  try {
-    const { productId } = req.params; // Captura el ID de la URL
-    const { tenant, date } = req.query; // Captura los parámetros de búsqueda
-
-    if (!tenant || !date) {
-      return res.status(400).json({ error: "Faltan parámetros tenant o date" });
-    }
-
-    // Llama al modelo pasando el productId opcional
-    const data =
-      await require("../models/inventory.model").getProductsWithActiveCounts(
-        tenant,
-        date,
-        productId,
-      );
-
-    res.status(200).json(data);
-  } catch (error) {
-    console.error("❌ Error en getProductWithCountsById:", error);
-    res
-      .status(500)
-      .json({ error: "Error interno del servidor al obtener el producto" });
   }
 };
 
