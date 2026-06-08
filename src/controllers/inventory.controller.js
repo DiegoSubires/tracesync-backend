@@ -265,7 +265,8 @@ exports.getProductsWithCounts = async (req, res) => {
     const collections =
       await InventoryModel.getDynamicCollectionNames(tenantId);
     console.log(
-      `📊 [Aggregation] Consultando catálogo [${collections.productsCollection}] mediante capa de modelo para el día: ${date}`,
+      `📊 [Aggregation] Resultado para el día: ${date}`,
+      aggregatedProducts,
     );
 
     const aggregatedProducts = await InventoryModel.getProductsWithActiveCounts(
