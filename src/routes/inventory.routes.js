@@ -32,14 +32,25 @@ setTimeout(() => {
 
 // Consulta de url
 router.get("/debug-data", async (req, res) => {
-  const { tenant, date } = req.query;
-  const dbTenant = getDbTenant();
+  try {
+    console.log("🔍 [DEBUG] Entrando a ruta debug-data...");
+    const { tenant, date } = req.query;
+    console.log("🔍 [DEBUG] Params:", { tenant, date });
 
-  const data = await dbTenant
-    .collection("mp_ch_temporary_counts")
-    .findOne({ countDate: date });
-  // /api/inventory/debug-data?tenant=moreno_plaza&date=2026-06-05
-  res.json(data);
+    const dbTenant = getDbTenant();
+    console.log("🔍 [DEBUG] DbTenant obtenido");
+
+    const data = await dbTenant
+      .collection("mp_ch_temporary_counts")
+      .findOne({ countDate: date });
+
+    console.log("🔍 [DEBUG] Datos encontrados:", data ? "Sí" : "No");
+
+    res.json({ message: "Éxito", data });
+  } catch (error) {
+    console.error("❌ [DEBUG ERROR]:", error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 module.exports = router;
