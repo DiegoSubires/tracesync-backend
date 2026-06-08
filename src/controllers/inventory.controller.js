@@ -246,7 +246,6 @@ exports.finalizeCount = async (req, res) => {
   }
 };*/
 
-// backend/controllers/inventory.controller.js
 const InventoryModel = require("../models/inventory.model");
 const { getDbTenant } = require("../config/db");
 
@@ -283,7 +282,7 @@ exports.getProductsWithCounts = async (req, res) => {
 };
 
 // 1b. Obtener un producto del catálogo cruzado con recuentos activos
-exports.getProductWithCountsById = async (req, res) => {
+/*exports.getProductWithCountsById = async (req, res) => {
   try {
     const { date } = req.query;
     const tenantId = req.query.tenantId || req.query.tenant;
@@ -320,6 +319,31 @@ exports.getProductWithCountsById = async (req, res) => {
     return res
       .status(500)
       .json({ error: err.message || "Error al obtener el producto" });
+  }
+};*/
+exports.getProductWithCountsById = async (req, res) => {
+  try {
+    const { productId } = req.params; // Captura el ID de la URL
+    const { tenant, date } = req.query; // Captura los parámetros de búsqueda
+
+    if (!tenant || !date) {
+      return res.status(400).json({ error: "Faltan parámetros tenant o date" });
+    }
+
+    // Llama al modelo pasando el productId opcional
+    const data =
+      await require("../models/inventory.model").getProductsWithActiveCounts(
+        tenant,
+        date,
+        productId,
+      );
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("❌ Error en getProductWithCountsById:", error);
+    res
+      .status(500)
+      .json({ error: "Error interno del servidor al obtener el producto" });
   }
 };
 
