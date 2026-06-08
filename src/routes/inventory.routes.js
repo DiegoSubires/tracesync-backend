@@ -16,17 +16,16 @@ router.get("/export-excel", inventoryController.exportToExcelCsv);
 // Ruta temporal de diagnóstico de ordenación de productos
 router.get("/debug-alignment", inventoryController.debugProductsAlignment);
 
-// 🕵️‍♂️ LOG 2: Este bloque auto-ejecutable listará en tu terminal todas las rutas reales registradas aquí
-setTimeout(() => {
-  console.log("\n=======================================================");
-  console.log("📌 RUTAS ACTIVAS REGISTRADAS EN INVENTORY.ROUTES:");
-  router.stack.forEach((layer) => {
-    if (layer.route) {
-      const metodos = Object.keys(layer.route.methods).join(", ").toUpperCase();
-      console.log(`   -> [${metodos}] ${layer.route.path}`);
-    }
-  });
-  console.log("=======================================================\n");
-}, 1000); // Espera 1 segundo a que Express monte el servidor para imprimirlo limpio
+// Consulta de url
+router.get("/debug-data", async (req, res) => {
+  const { tenant, date } = req.query;
+  const dbTenant = getDbTenant();
+
+  const data = await dbTenant
+    .collection("mp_ch_temporary_counts")
+    .findOne({ countDate: date });
+  // /api/inventory/debug-data?tenant=moreno_plaza&date=2026-06-05
+  res.json(data);
+});
 
 module.exports = router;
