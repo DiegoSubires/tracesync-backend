@@ -16,7 +16,8 @@ module.exports = router;*/
 
 const express = require("express");
 const router = express.Router();
-const authMiddleware = require("../middleware/auth.middleware");
+//const authMiddleware = require("../middleware/auth.middleware");
+router.use("/inventory", inventoryRoutes);
 
 const authRoutes = require("./auth.routes");
 const tenantRoutes = require("./tenant.routes");
