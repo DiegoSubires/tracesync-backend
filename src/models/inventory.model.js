@@ -35,64 +35,77 @@ async function getDynamicCollectionNames(
 /**
  * Ejecuta la agregación para cruzar el catálogo maestro con los borradores del día
  */
-async function getProductsWithActiveCounts(tenantId, date) {
+async function getProductsWithActiveCounts(tenantId, date, productId = null) {
   const dbTenant = getDbTenant();
   const collections = await getDynamicCollectionNames(tenantId);
 
-  return await dbTenant
-    .collection(collections.productsCollection)
-    .aggregate([
-      {
-        $match: {
-          visible: { $nin: [false, "false"] },
-        },
+  const pipeline = [];
+
+  // 1. FILTRO ESPECÍFICO (Sin tocar el _id de Mongo)
+  if (productId) {
+    // Buscamos directamente por tu campo 'id'
+    pipeline.push({ $match: { id: productId } });
+  } else {
+    // Si no pedimos un producto concreto, aplicamos el filtro de visibilidad original
+    pipeline.push({
+      $match: {
+        visible: { $nin: [false, "false"] },
       },
-      {
-        $lookup: {
-          from: collections.temporaryCollection,
-          let: { productIdInCatalog: "$id" },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ["$productId", "$$productIdInCatalog"] },
-                    { $eq: ["$countDate", date] },
-                  ],
-                },
+    });
+  }
+
+  // 2. RESTO DEL PIPELINE ORIGINAL (Mantenido intacto)
+  pipeline.push(
+    {
+      $lookup: {
+        from: collections.temporaryCollection,
+        let: { productIdInCatalog: "$id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$productId", "$$productIdInCatalog"] },
+                  { $eq: ["$countDate", date] },
+                ],
               },
             },
-          ],
-          as: "temporaryDocs",
-        },
+          },
+        ],
+        as: "temporaryDocs",
       },
-      {
-        $project: {
-          id: 1,
-          code: 1,
-          description: 1,
-          alternativeDescription: 1,
-          category: 1,
-          subcategory: 1,
-          unitsPerCrate: 1,
-          visible: 1,
-          sortOrder: 1,
-          batches: {
-            $cond: {
-              if: { $gt: [{ $size: "$temporaryDocs" }, 0] },
-              then: {
-                $let: {
-                  vars: { firstDoc: { $arrayElemAt: ["$temporaryDocs", 0] } },
-                  in: "$$firstDoc.batchLines",
-                },
+    },
+    {
+      $project: {
+        id: 1,
+        code: 1,
+        description: 1,
+        alternativeDescription: 1,
+        category: 1,
+        subcategory: 1,
+        unitsPerCrate: 1,
+        visible: 1,
+        sortOrder: 1,
+        batches: {
+          $cond: {
+            if: { $gt: [{ $size: "$temporaryDocs" }, 0] },
+            then: {
+              $let: {
+                vars: { firstDoc: { $arrayElemAt: ["$temporaryDocs", 0] } },
+                in: "$$firstDoc.batchLines",
               },
-              else: [],
             },
+            else: [],
           },
         },
       },
-      { $sort: { sortOrder: 1 } },
-    ])
+    },
+    { $sort: { sortOrder: 1 } },
+  );
+
+  return await dbTenant
+    .collection(collections.productsCollection)
+    .aggregate(pipeline)
     .toArray();
 }
 
