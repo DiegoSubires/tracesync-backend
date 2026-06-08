@@ -10,6 +10,11 @@ module.exports = (req, res, next) => {
       .status(401)
       .json({ message: "Acceso denegado: Token no proporcionado" });
 
+  console.log(
+    "🔍 [DEBUG] LLAVE USADA PARA VERIFICAR:",
+    process.env.JWT_SECRET || "supersecreto",
+  );
+
   jwt.verify(token, process.env.JWT_SECRET || "supersecreto", (err, user) => {
     if (err)
       return res.status(403).json({ message: "Token inválido o expirado" });
