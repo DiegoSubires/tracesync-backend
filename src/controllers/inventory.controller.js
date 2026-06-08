@@ -250,7 +250,7 @@ exports.finalizeCount = async (req, res) => {
 const InventoryModel = require("../models/inventory.model");
 const { getDbTenant } = require("../config/db");
 
-// 1. Obtener catálogo cruzado con recuentos activos
+// 1a. Obtener catálogo cruzado con recuentos activos
 exports.getProductsWithCounts = async (req, res) => {
   try {
     const { date } = req.query;
@@ -279,6 +279,48 @@ exports.getProductsWithCounts = async (req, res) => {
     return res
       .status(500)
       .json({ error: err.message || "Error al sincronizar recuentos" });
+  }
+};
+
+// 1a. Obtener un producto del catálogo cruzado con recuentos activos
+exports.getProductWithCountsById = async (req, res) => {
+  try {
+    const { date } = req.query;
+    const tenantId = req.query.tenantId || req.query.tenant;
+    const { productId } = req.params; // Obtenemos el ID de la ruta
+
+    if (!tenantId || !date || !productId) {
+      return res
+        .status(400)
+        .json({ error: "tenantId, date y productId son obligatorios" });
+    }
+
+    // Siguiendo tu estructura de logs
+    console.log(
+      `📊 [Aggregation] Consultando detalle producto [${productId}] para el día: ${date}`,
+    );
+
+    // Llamamos al modelo pasando el productId extra
+    const result = await InventoryModel.getProductsWithActiveCounts(
+      tenantId,
+      date,
+      productId,
+    );
+
+    // Si el modelo retorna un array vacío o null, 404
+    if (!result || (Array.isArray(result) && result.length === 0)) {
+      return res.status(404).json({ error: "Producto no encontrado" });
+    }
+
+    // Si es un array (por el pipeline) retornamos el primer elemento, si es objeto, el objeto
+    const product = Array.isArray(result) ? result[0] : result;
+
+    return res.json(product);
+  } catch (err) {
+    console.error("❌ Error en getProductWithCountsById:", err);
+    return res
+      .status(500)
+      .json({ error: err.message || "Error al obtener el producto" });
   }
 };
 

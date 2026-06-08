@@ -5,6 +5,10 @@ const inventoryController = require("../controllers/inventory.controller");
 
 // 🟢 Centralización operativa del inventario diario
 router.get("/products-with-counts", inventoryController.getProductsWithCounts);
+router.get(
+  "/products-with-counts/:productId",
+  inventoryController.getProductWithCountsById,
+);
 router.put("/temporary", inventoryController.saveTemporaryCount);
 router.post("/finalize", inventoryController.finalizeCount);
 router.get("/day-status", inventoryController.getDayStatus);
