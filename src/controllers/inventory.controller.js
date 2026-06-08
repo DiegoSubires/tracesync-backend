@@ -282,7 +282,7 @@ exports.getProductsWithCounts = async (req, res) => {
   }
 };
 
-// 1a. Obtener un producto del catálogo cruzado con recuentos activos
+// 1b. Obtener un producto del catálogo cruzado con recuentos activos
 exports.getProductWithCountsById = async (req, res) => {
   try {
     const { date } = req.query;
@@ -295,7 +295,6 @@ exports.getProductWithCountsById = async (req, res) => {
         .json({ error: "tenantId, date y productId son obligatorios" });
     }
 
-    // Siguiendo tu estructura de logs
     console.log(
       `📊 [Aggregation] Consultando detalle producto [${productId}] para el día: ${date}`,
     );
@@ -307,12 +306,12 @@ exports.getProductWithCountsById = async (req, res) => {
       productId,
     );
 
-    // Si el modelo retorna un array vacío o null, 404
+    // Si el resultado es un array vacío, devolvemos 404
     if (!result || (Array.isArray(result) && result.length === 0)) {
       return res.status(404).json({ error: "Producto no encontrado" });
     }
 
-    // Si es un array (por el pipeline) retornamos el primer elemento, si es objeto, el objeto
+    // Retornamos el primer elemento (ya que filtramos por ID)
     const product = Array.isArray(result) ? result[0] : result;
 
     return res.json(product);
