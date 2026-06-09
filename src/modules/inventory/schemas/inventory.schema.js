@@ -34,18 +34,15 @@ const validateQuery = (schema) => (req, res, next) => {
 };
 
 // Define la estructura de cada producto individual en el resumen
-const SummaryItemSchema = z.object({
+const HomeSummaryItemSchema = z.object({
   productId: z.string(),
-  productName: z.string(), // Ej: "HAMBURGUESAS TERN"
-  category: z.string().optional(), // Ej: "GRANEL", "PEQUEÑA", "CURADOS"
-  totalQuantity: z.number().nonnegative(), // El total sumado (Ej: 106)
-  totalCrates: z.number().nonnegative(), // Total de cajas si lo necesitas
+  totalQuantity: z.number().nonnegative(),
 });
 
 const HomeSummarySchema = z.object({
   tenantId: z.string(),
   date: z.string(),
-  summary: z.array(SummaryItemSchema), // El array con todos los productos calculados
+  summary: z.array(HomeSummaryItemSchema),
 });
 
 module.exports = {
