@@ -22,7 +22,8 @@ const authMiddleware = require("../middleware/auth.middleware");
 const authRoutes = require("./auth.routes");
 const tenantRoutes = require("./tenant.routes");
 const productRoutes = require("./product.routes");
-const inventoryRoutes = require("./inventory.routes");
+//const inventoryRoutes = require("./inventory.routes");
+const inventoryRoutes = require("../modules/inventory/inventory.routes");
 
 // Rutas públicas (Login)
 router.use(authRoutes);
