@@ -33,6 +33,12 @@ const validateQuery = (schema) => (req, res, next) => {
   next();
 };
 
+const HomeSummarySchema = z.object({
+  tenantId: z.string(),
+  date: z.string(),
+  summary: z.array(SummaryItemSchema), // El array con todos los productos calculados
+});
+
 module.exports = {
   InventorySchema,
   HomeSummarySchema,
