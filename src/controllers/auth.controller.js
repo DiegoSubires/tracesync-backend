@@ -1,9 +1,10 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const mongoose = require("mongoose");
+const mongoose = require("mongoose"); // 🎯 Conexión nativa activa
 
-/*const { getDbGlobal, getDbOperation } = require("../config/db");
-
+// ==========================================
+// 📥 CONTROLLER: LOGIN
+// ==========================================
 exports.login = async (req, res) => {
   console.log("\n=========================================");
   console.log("📥 [LOGIN] Nueva petición recibida en /api/login");
@@ -15,16 +16,24 @@ exports.login = async (req, res) => {
       return res.status(400).json({ error: "Faltan credenciales" });
     }
 
-    const dbOperation = getDbOperation();
-    const dbGlobal = getDbGlobal();
-
-    if (!dbOperation || !dbGlobal) {
-      return res
-        .status(500)
-        .json({ error: "Error de conexión interna a las bases de datos" });
+    // Verificación del estado de la conexión principal
+    if (mongoose.connection.readyState !== 1) {
+      console.error("⏳ [MONGO] La conexión principal no está lista todavía.");
+      return res.status(500).json({
+        error:
+          "El servidor de base de datos se está iniciando. Reintenta en unos segundos.",
+      });
     }
 
-    // Buscar usuario en tracesync_operation
+    // Acceso dinámico y seguro usando caché nativo de Mongoose
+    const dbOperation = mongoose.connection.useDb("tracesync_operation", {
+      useCache: true,
+    });
+    const dbGlobal = mongoose.connection.useDb("tracesync_global", {
+      useCache: true,
+    });
+
+    // Buscar usuario en la base de datos de operaciones
     const user = await dbOperation
       .collection("users")
       .findOne({ email: email });
@@ -34,18 +43,18 @@ exports.login = async (req, res) => {
         .json({ error: "El correo electrónico no está registrado." });
     }
 
-    // Validar contraseña
+    // Validar contraseña con Bcrypt
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({ error: "Contraseña incorrecta." });
     }
 
-    // Buscar metadatos del Tenant en la tabla global
+    // Buscar metadatos de la planta (Tenant) en la tabla global
     const tenant = await dbGlobal
       .collection("tenant_list")
       .findOne({ tenantId: user.tenantId });
 
-    // Cargar y filtrar aplicaciones
+    // Cargar y filtrar aplicaciones accesibles
     const allApps = await dbGlobal
       .collection("app_registry")
       .find({})
@@ -57,7 +66,7 @@ exports.login = async (req, res) => {
         user.group === "todos",
     );
 
-    // Firmar JWT
+    // Firmar JWT con validez de 365 días para desarrollo cómodo
     const token = jwt.sign(
       {
         userId: user._id,
@@ -72,7 +81,6 @@ exports.login = async (req, res) => {
     console.log(`✅ [LOGIN] Autenticación exitosa para: ${user.email}`);
     console.log("=========================================\n");
 
-    // Retornamos la estructura exacta que tus servicios y mapeos necesitan
     return res.json({
       token,
       user: {
@@ -84,19 +92,21 @@ exports.login = async (req, res) => {
       tenant: {
         tenantId: user.tenantId,
         businessName: tenant ? tenant.businessName : "TraceSync Partner",
-        // Pasamos el string base64 de la BD al campo logoUrl que espera el front
         logoUrl: tenant ? tenant.logoBase64 || tenant.logoUrl : "",
       },
       apps: allowedApps,
     });
   } catch (err) {
-    console.error("💥 [LOGIN] Error:", err);
+    console.error("💥 [LOGIN] Error real:", err);
     return res
       .status(500)
       .json({ error: "Error interno en el servidor central de TraceSync." });
   }
 };
 
+// ==========================================
+// 📥 CONTROLLER: VERIFY OPERATOR (REPARADO Y DESCOMENTADO)
+// ==========================================
 exports.verifyOperator = async (req, res) => {
   console.log("\n=========================================");
   console.log(
@@ -109,24 +119,31 @@ exports.verifyOperator = async (req, res) => {
     const pinRecibido = pin ? String(pin).trim() : "";
     const appIdRecibido = appId ? String(appId).trim().toLowerCase() : "";
 
-    const dbOperation = getDbOperation();
-
-    if (!dbOperation) {
-      return res.status(500).json({ error: "Fallo de conexión en planta" });
+    // Verificación de conexión a MongoDB
+    if (mongoose.connection.readyState !== 1) {
+      console.error(
+        "⏳ [MONGO] La conexión principal no está lista para verificar operario.",
+      );
+      return res
+        .status(500)
+        .json({ error: "Fallo de conexión temporal en la red de planta." });
     }
 
-    // 1. Recuperamos todos los operarios para poder verificar el hash de Bcrypt
+    // Acceso seguro bajo demanda
+    const dbOperation = mongoose.connection.useDb("tracesync_operation", {
+      useCache: true,
+    });
+
+    // Recuperamos los operarios para validar el hash del PIN
     const operators = await dbOperation
       .collection("operators")
       .find({})
       .toArray();
-
     let verifiedOperator = null;
 
     for (const op of operators) {
       if (!op.pin) continue;
 
-      // Comparamos el PIN en texto plano con el hash de la BD
       const match = await bcrypt.compare(pinRecibido, op.pin);
       if (match) {
         verifiedOperator = op;
@@ -134,7 +151,6 @@ exports.verifyOperator = async (req, res) => {
       }
     }
 
-    // Si no coincide ningún Bcrypt, cambiamos a 401 (Credenciales incorrectas)
     if (!verifiedOperator) {
       console.log(`❌ [VERIFY OPERATOR] PIN incorrecto.`);
       console.log("=========================================\n");
@@ -143,7 +159,7 @@ exports.verifyOperator = async (req, res) => {
       });
     }
 
-    // 2. 🔒 CONTROL DE ACCESO INDUSTRIAL ADAPTATIVO MULTI-APP (Recuperado)
+    // Control de acceso industrial adaptativo por aplicación
     const dbAllowedApps = verifiedOperator.allowedApps;
     let hasPermission = false;
 
@@ -158,7 +174,6 @@ exports.verifyOperator = async (req, res) => {
       hasPermission = cleanString === "todos" || cleanString === appIdRecibido;
     }
 
-    // Si el operario existe pero no tiene permisos para esta app específica
     if (!hasPermission) {
       console.log(
         `🚫 [VERIFY OPERATOR] Acceso denegado a la app para: ${verifiedOperator.fullName || verifiedOperator.name}`,
@@ -174,113 +189,15 @@ exports.verifyOperator = async (req, res) => {
     );
     console.log("=========================================\n");
 
-    // 3. Respuesta exitosa estructurada para el estado del frontend
     return res.json({
       name: verifiedOperator.fullName || verifiedOperator.name,
       role: verifiedOperator.role || "Operario",
       tenantId: verifiedOperator.tenantId,
     });
   } catch (err) {
-    console.error("💥 [VERIFY OPERATOR] Error:", err);
-    return res.status(500).json({ error: "Error al verificar operario" });
-  }
-};*/
-
-exports.login = async (req, res) => {
-  console.log("\n=========================================");
-  console.log("📥 [LOGIN] Nueva petición recibida en /api/login");
-
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ error: "Faltan credenciales" });
-    }
-
-    // 👈 2. Reemplazo seguro: Si Mongoose está conectado, accedemos bajo demanda a las bases de datos
-    if (mongoose.connection.readyState !== 1) {
-      console.error("⏳ [MONGO] La conexión principal no está lista todavía.");
-      return res.status(500).json({
-        error:
-          "El servidor de base de datos se está iniciando. Reintenta en unos segundos.",
-      });
-    }
-
-    // Acceso directo usando .useDb con caché nativo de Mongoose
-    const dbOperation = mongoose.connection.useDb("tracesync_operation", {
-      useCache: true,
-    });
-    const dbGlobal = mongoose.connection.useDb("tracesync_global", {
-      useCache: true,
-    });
-
-    // Buscar usuario en tracesync_operation
-    const user = await dbOperation
-      .collection("users")
-      .findOne({ email: email });
-    if (!user) {
-      return res
-        .status(401)
-        .json({ error: "El correo electrónico no está registrado." });
-    }
-
-    // Validar contraseña
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ error: "Contraseña incorrecta." });
-    }
-
-    // Buscar metadatos del Tenant en la tabla global
-    const tenant = await dbGlobal
-      .collection("tenant_list")
-      .findOne({ tenantId: user.tenantId });
-
-    // Cargar y filtrar aplicaciones
-    const allApps = await dbGlobal
-      .collection("app_registry")
-      .find({})
-      .toArray();
-    const allowedApps = allApps.filter(
-      (app) =>
-        user.role === "admin" ||
-        app.appId === user.group ||
-        user.group === "todos",
-    );
-
-    // Firmar JWT - Tu configuración de '365d' ya está perfecta aquí 🎯
-    const token = jwt.sign(
-      {
-        userId: user._id,
-        tenantId: user.tenantId,
-        role: user.role,
-        group: user.group,
-      },
-      process.env.JWT_SECRET || "secret_key",
-      { expiresIn: "365d" },
-    );
-
-    console.log(`✅ [LOGIN] Autenticación exitosa para: ${user.email}`);
-    console.log("=========================================\n");
-
-    return res.json({
-      token,
-      user: {
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        group: user.group,
-      },
-      tenant: {
-        tenantId: user.tenantId,
-        businessName: tenant ? tenant.businessName : "TraceSync Partner",
-        logoUrl: tenant ? tenant.logoBase64 || tenant.logoUrl : "",
-      },
-      apps: allowedApps,
-    });
-  } catch (err) {
-    console.error("💥 [LOGIN] Error real:", err); // 👈 3. Esto imprimirá el error real en Render si algo más falla
+    console.error("💥 [VERIFY OPERATOR] Error real:", err);
     return res
       .status(500)
-      .json({ error: "Error interno en el servidor central de TraceSync." });
+      .json({ error: "Error al verificar operario en el sistema de planta." });
   }
 };
