@@ -5,7 +5,7 @@ const { tenantResolver } = require("../../middleware/tenantResolver");
 const {
   DayStatusQuerySchema,
   validateQuery,
-} = require(".schemas/inventory.schema");
+} = require("./schemas/inventory.schema");
 
 /**
  * @openapi
