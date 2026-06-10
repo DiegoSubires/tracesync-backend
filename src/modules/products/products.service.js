@@ -5,7 +5,10 @@ exports.getCatalogByPrefix = async (dbPrefix) => {
     // Obtenemos el modelo acoplado a la colección física del cliente desde su propio archivo de modelos
     const ProductModel = getProductModelByTenant(dbPrefix);
 
-    const products = await ProductModel.find({ visible: true })
+    const products = await ProductModel.find({
+      visible: true,
+      category: { $in: ["Frescos Granel", "Frescos Pequeña"] },
+    })
       .select(
         "id code description alternativeDescription category subcategory visible sortOrder",
       )
