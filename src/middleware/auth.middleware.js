@@ -12,7 +12,7 @@ module.exports = (req, res, next) => {
 
   console.log(
     "🔍 [DEBUG] LLAVE USADA PARA VERIFICAR:",
-    process.env.JWT_SECRET || "supersecreto",
+    process.env.JWT_SECRET || "secret_key",
   );
 
   /*jwt.verify(token, process.env.JWT_SECRET || "supersecreto", (err, user) => {
@@ -22,7 +22,7 @@ module.exports = (req, res, next) => {
     next();
   });*/
 
-  jwt.verify(token, process.env.JWT_SECRET || "supersecreto", (err, user) => {
+  jwt.verify(token, process.env.JWT_SECRET || "secret_key", (err, user) => {
     if (err) {
       // ESTO NOS DIRÁ SI ES UN PROBLEMA DE FIRMA O DE EXPIRACIÓN
       console.error("❌ [ERROR AUTH]:", err.message);

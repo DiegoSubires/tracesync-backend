@@ -1,6 +1,8 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { getDbGlobal, getDbOperation } = require("../config/db");
+const mongoose = require("mongoose");
+
+/*const { getDbGlobal, getDbOperation } = require("../config/db");
 
 exports.login = async (req, res) => {
   console.log("\n=========================================");
@@ -181,5 +183,104 @@ exports.verifyOperator = async (req, res) => {
   } catch (err) {
     console.error("💥 [VERIFY OPERATOR] Error:", err);
     return res.status(500).json({ error: "Error al verificar operario" });
+  }
+};*/
+
+exports.login = async (req, res) => {
+  console.log("\n=========================================");
+  console.log("📥 [LOGIN] Nueva petición recibida en /api/login");
+
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: "Faltan credenciales" });
+    }
+
+    // 👈 2. Reemplazo seguro: Si Mongoose está conectado, accedemos bajo demanda a las bases de datos
+    if (mongoose.connection.readyState !== 1) {
+      console.error("⏳ [MONGO] La conexión principal no está lista todavía.");
+      return res.status(500).json({
+        error:
+          "El servidor de base de datos se está iniciando. Reintenta en unos segundos.",
+      });
+    }
+
+    // Acceso directo usando .useDb con caché nativo de Mongoose
+    const dbOperation = mongoose.connection.useDb("tracesync_operation", {
+      useCache: true,
+    });
+    const dbGlobal = mongoose.connection.useDb("tracesync_global", {
+      useCache: true,
+    });
+
+    // Buscar usuario en tracesync_operation
+    const user = await dbOperation
+      .collection("users")
+      .findOne({ email: email });
+    if (!user) {
+      return res
+        .status(401)
+        .json({ error: "El correo electrónico no está registrado." });
+    }
+
+    // Validar contraseña
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: "Contraseña incorrecta." });
+    }
+
+    // Buscar metadatos del Tenant en la tabla global
+    const tenant = await dbGlobal
+      .collection("tenant_list")
+      .findOne({ tenantId: user.tenantId });
+
+    // Cargar y filtrar aplicaciones
+    const allApps = await dbGlobal
+      .collection("app_registry")
+      .find({})
+      .toArray();
+    const allowedApps = allApps.filter(
+      (app) =>
+        user.role === "admin" ||
+        app.appId === user.group ||
+        user.group === "todos",
+    );
+
+    // Firmar JWT - Tu configuración de '365d' ya está perfecta aquí 🎯
+    const token = jwt.sign(
+      {
+        userId: user._id,
+        tenantId: user.tenantId,
+        role: user.role,
+        group: user.group,
+      },
+      process.env.JWT_SECRET || "secret_key",
+      { expiresIn: "365d" },
+    );
+
+    console.log(`✅ [LOGIN] Autenticación exitosa para: ${user.email}`);
+    console.log("=========================================\n");
+
+    return res.json({
+      token,
+      user: {
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        group: user.group,
+      },
+      tenant: {
+        tenantId: user.tenantId,
+        businessName: tenant ? tenant.businessName : "TraceSync Partner",
+        logoUrl: tenant ? tenant.logoBase64 || tenant.logoUrl : "",
+      },
+      apps: allowedApps,
+    });
+  } catch (err) {
+    console.error("💥 [LOGIN] Error real:", err); // 👈 3. Esto imprimirá el error real en Render si algo más falla
+    return res
+      .status(500)
+      .json({ error: "Error interno en el servidor central de TraceSync." });
   }
 };
