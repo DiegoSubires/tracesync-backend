@@ -24,3 +24,31 @@ exports.getDaySummary = async (req, res) => {
     res.status(500).json({ error: "Error al obtener resumen" });
   }
 };
+
+exports.getDayStatus = async (req, res) => {
+  console.log(`\n📢 [PETICIÓN ENTRANTE] GET a /api/inventory/day-status`);
+  try {
+    const { date } = req.query;
+    const dbPrefix = req.dbPrefix; // Inyectado automáticamente por tenantResolver al procesar tenantId
+
+    if (!date) {
+      return res
+        .status(400)
+        .json({ error: "El parámetro 'date' (AAAA-MM-DD) es obligatorio." });
+    }
+
+    // Consultamos al servicio con el prefijo ("mp") y la fecha
+    const finalized = await inventoryService.isDayFinalized(dbPrefix, date);
+
+    console.log(
+      `📊 [DAY STATUS] Estado del día ${date} para tenant [${dbPrefix}]: ${finalized ? "CERRADO 🔒" : "ABIERTO 🔓"}`,
+    );
+
+    return res.json({ finalized });
+  } catch (err) {
+    console.error("💥 Error en getDayStatus:", err);
+    return res
+      .status(500)
+      .json({ error: "Error al verificar el estado de cierre de la planta." });
+  }
+};
