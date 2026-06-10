@@ -29,32 +29,39 @@ const getInventorySummary = async (tenantId, countDate) => {
 };
 
 /**
- * Comprueba si una jornada de inventario está cerrada para una planta específica
+ * Comprueba si una jornada de inventario está cerrada para una planta específica (Moreno Plaza)
  */
-const isDayFinalized = async (dbPrefix, date) => {
+const isDayFinalized = async (dbPrefix, dateStr) => {
   if (mongoose.connection.readyState !== 1) {
     throw new Error("La conexión a MongoDB Atlas no está activa.");
   }
 
-  // 🎯 Conectamos dinámicamente a la BD del tenant (ej: mp_chamber_inventory o similar)
-  // Usamos useCache: true para que Mongoose reutilice los hilos y vaya como un tiro
-  const dbTenant = mongoose.connection.useDb(`${dbPrefix}_chamber_inventory`, {
+  // 🎯 Apuntamos EXACTAMENTE a la base de datos de tu Compass
+  const dbTenant = mongoose.connection.useDb("tracesync_tenant", {
     useCache: true,
   });
 
-  // Apuntamos a la nueva colección unificada que vas a crear en Atlas
+  // 🎯 Apuntamos EXACTAMENTE a la colección de tu Compass (ej: mp_ch_day_status)
   const dayStatusCollection = dbTenant.collection("mp_ch_day_status");
 
-  // Buscamos el registro de la fecha recibida
-  const dayRecord = await dayStatusCollection.findOne({ date: date });
+  // Al ser ambos Strings exactos ("2026-06-05"), el match es directo y limpio
+  const dayRecord = await dayStatusCollection.findOne({ date: dateStr });
 
   // Si no hay documento creado todavía para ese día, la jornada está abierta por defecto
   if (!dayRecord) {
+    console.log(
+      `⚠️ [SERVICE] No se encontró registro para la fecha String: ${dateStr} en tracesync_tenant.mp_ch_day_status`,
+    );
     return false;
   }
 
-  // Devolvemos el estado booleano real guardado en la base de datos
-  return dayRecord.finalized === true;
+  console.log(
+    `✅ [SERVICE] ¡Documento encontrado!:`,
+    JSON.stringify(dayRecord),
+  );
+
+  // Retornamos el valor booleano real del documento
+  return dayRecord.finalized === true || dayRecord.status === "finalized";
 };
 
 module.exports = { getInventorySummary, isDayFinalized };
