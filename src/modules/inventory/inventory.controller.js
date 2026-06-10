@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const inventoryService = require("./inventory.service");
 const { HomeSummarySchema } = require("./schemas/inventory.schema");
 
