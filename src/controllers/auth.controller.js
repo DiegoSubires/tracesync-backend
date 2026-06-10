@@ -64,7 +64,7 @@ exports.login = async (req, res) => {
         group: user.group,
       },
       process.env.JWT_SECRET || "secret_key",
-      { expiresIn: "12h" },
+      { expiresIn: "365d" },
     );
 
     console.log(`✅ [LOGIN] Autenticación exitosa para: ${user.email}`);
