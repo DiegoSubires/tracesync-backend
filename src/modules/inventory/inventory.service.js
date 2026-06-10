@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const { getDbTenant } = require("../../config/db");
 
 const getInventorySummary = async (tenantId, countDate) => {
