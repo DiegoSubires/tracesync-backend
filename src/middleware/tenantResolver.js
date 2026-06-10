@@ -1,9 +1,5 @@
-const mongoose = require("mongoose");
+const tenantService = require("../services/tenant.service");
 
-// Un mapa simple en memoria para actuar como caché y no saturar Atlas a peticiones
-const prefixCache = new Map();
-
-// 1. Cambiado a una función clásica (sin 'export' delante)
 const tenantResolver = async (req, res, next) => {
   const tenantId = req.query.tenantId || req.headers["x-tenant-id"];
 
@@ -14,37 +10,19 @@ const tenantResolver = async (req, res, next) => {
   }
 
   try {
-    if (prefixCache.has(tenantId)) {
-      req.dbPrefix = prefixCache.get(tenantId);
-      req.tenantId = tenantId;
-      return next();
-    }
+    // Llamada al servicio en lugar de lógica directa de Mongoose
+    const dbPrefix = await tenantService.getTenantByPrefix(tenantId);
 
-    const GlobalTenant = mongoose.connection
-      .useDb("tracesync_global")
-      .collection("tenant_list");
-    const tenantInfo = await GlobalTenant.findOne({ tenantId, isActive: true });
-
-    if (!tenantInfo || !tenantInfo.dbPrefix) {
-      return res
-        .status(404)
-        .json({ error: "Tenant no configurado o inactivo" });
-    }
-
-    prefixCache.set(tenantId, tenantInfo.dbPrefix);
-    req.dbPrefix = tenantInfo.dbPrefix;
+    req.dbPrefix = dbPrefix;
     req.tenantId = tenantId;
-
     next();
   } catch (error) {
-    console.error("🚨 Error resolviendo el prefijo del tenant:", error);
+    // Manejo de errores centralizado
+    console.error("🚨 Error resolviendo el prefijo del tenant:", error.message);
     res
-      .status(500)
-      .json({ error: "Error interno al procesar el multi-tenancy" });
+      .status(404)
+      .json({ error: error.message || "Error al procesar el multi-tenancy" });
   }
 };
 
-// 2. Exportación estándar usando CommonJS para que funcione con tus 'require'
-module.exports = {
-  tenantResolver,
-};
+module.exports = { tenantResolver };

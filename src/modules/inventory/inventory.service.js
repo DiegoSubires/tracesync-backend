@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const { getDbTenant } = require("../../config/db");
+//const { getDbTenant } = require("../../config/db");
 
 /*const getInventorySummary = async (tenantId, countDate) => {
   const db = getDbTenant(tenantId);
@@ -98,7 +98,7 @@ const isDayFinalized = async (dbPrefix, dateStr) => {
   });
 
   // 🎯 Apuntamos EXACTAMENTE a la colección de tu Compass (ej: mp_ch_day_status)
-  const dayStatusCollection = dbTenant.collection("mp_ch_day_status");
+  const dayStatusCollection = dbTenant.collection(`${dbPrefix}_ch_day_status`);
 
   // Al ser ambos Strings exactos ("2026-06-05"), el match es directo y limpio
   const dayRecord = await dayStatusCollection.findOne({ date: dateStr });

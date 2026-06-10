@@ -34,7 +34,13 @@ const {
  * productId: { type: string }
  * totalQuantity: { type: number }
  */
-router.get("/summary", inventoryController.getDaySummary);
+//router.get("/summary", inventoryController.getDaySummary);
+router.get(
+  "/summary",
+  tenantResolver,
+  validateQuery(QuerySchema),
+  inventoryController.getDaySummary,
+);
 
 /**
  * @openapi
