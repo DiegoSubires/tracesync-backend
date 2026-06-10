@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const { getDbTenant } = require("../../config/db");
 
-const getInventorySummary = async (tenantId, countDate) => {
+/*const getInventorySummary = async (tenantId, countDate) => {
   const db = getDbTenant(tenantId);
 
   // Agregación para obtener solo productId y totalQuantity
@@ -26,6 +26,61 @@ const getInventorySummary = async (tenantId, countDate) => {
     ])
     .toArray();
 
+  return summary;
+};*/
+
+/**
+ * Obtiene el resumen consolidado para el Home de la planta
+ */
+const getInventorySummary = async (dbPrefix, countDate) => {
+  console.log(`\n📊 [AUDITORÍA SUMMARY] Inicio de getInventorySummary`);
+  console.log(`   👉 dbPrefix deducido: "${dbPrefix}"`);
+  console.log(`   👉 countDate recibido: "${countDate}"`);
+
+  if (mongoose.connection.readyState !== 1) {
+    throw new Error("La conexión a MongoDB Atlas no está activa.");
+  }
+
+  // Usamos el mismo punto de conexión exacto y fiable
+  const dbTenant = mongoose.connection.useDb("tracesync_tenant", {
+    useCache: true,
+  });
+
+  // Si tus colecciones de conteos también llevan el prefijo dinámico en "tracesync_tenant"
+  const targetCollection = `${dbPrefix}_ch_temporary_counts`;
+  console.log(
+    `   📂 [AUDITORÍA SUMMARY] Apuntando a la colección: "${targetCollection}"`,
+  );
+
+  const collection = dbTenant.collection(targetCollection);
+
+  console.log(
+    `   ⏳ [AUDITORÍA SUMMARY] Ejecutando agregación en Atlas para la fecha: ${countDate}...`,
+  );
+
+  const summary = await collection
+    .aggregate([
+      { $match: { countDate: countDate } },
+      { $unwind: "$batchLines" },
+      {
+        $group: {
+          _id: "$productId",
+          totalQuantity: { $sum: "$batchLines.quantity" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          productId: "$_id",
+          totalQuantity: 1,
+        },
+      },
+    ])
+    .toArray();
+
+  console.log(
+    `   ✅ [AUDITORÍA SUMMARY] Agregación completada. Items encontrados: ${summary.length}`,
+  );
   return summary;
 };
 

@@ -3,26 +3,35 @@ const inventoryService = require("./inventory.service");
 const { HomeSummarySchema } = require("./schemas/inventory.schema");
 
 exports.getDaySummary = async (req, res) => {
+  console.log(`\n📢 [PETICIÓN ENTRANTE] GET a la ruta: /api/inventory/summary`);
+
   try {
-    const { tenantId, date } = req.query;
+    const { date } = req.query;
+    const dbPrefix = req.dbPrefix; // 🎯 Usamos el prefijo resuelto ("mp") en vez del tenantId crudo
 
-    const data = await inventoryService.getInventorySummary(tenantId, date);
+    console.log(
+      `   📥 [CONTROLADOR SUMMARY] Query recibida -> Fecha: "${date}" | dbPrefix: "${dbPrefix}"`,
+    );
 
-    // Envolvemos el array en el objeto que espera tu HomeSummarySchema
+    // Invocamos pasándole el prefijo unificado
+    const data = await inventoryService.getInventorySummary(dbPrefix, date);
+
     const payloadParaValidar = {
-      tenantId,
+      tenantId: req.query.tenantId || dbPrefix, // Mantenemos el ID que espera Zod para validar
       date,
       summary: data,
     };
 
-    // Ahora la validación pasará sin problemas
     const validatedData = HomeSummarySchema.parse(payloadParaValidar);
 
-    console.log("📤 [BACKEND] Respuesta Home:", validatedData);
-    res.json(validatedData);
+    console.log("📤 [BACKEND] Respuesta Home enviada correctamente.");
+    return res.json(validatedData);
   } catch (error) {
-    console.error("💥 Error en getDaySummary:", error);
-    res.status(500).json({ error: "Error al obtener resumen" });
+    console.error(
+      "💥 [ERROR] Fallo crítico en getDaySummary:",
+      error.stack || error.message,
+    );
+    return res.status(500).json({ error: "Error al obtener resumen" });
   }
 };
 
