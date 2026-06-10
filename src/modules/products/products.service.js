@@ -1,20 +1,23 @@
-const Product = require("./products.model");
+const { getProductModelByTenant } = require("./products.model");
 
-exports.getCatalogByTenant = async (tenantId) => {
+exports.getCatalogByPrefix = async (dbPrefix) => {
   try {
-    // En Mongoose, usamos .select() para traer solo lo indispensable y ganar velocidad
-    // Adaptamos el '_id' de Mongo a 'id' para cumplir con el frontend
-    //
-    const products = await Product.find({ tenantId, visible: true })
+    // Obtenemos el modelo acoplado a la colección física del cliente desde su propio archivo de modelos
+    const ProductModel = getProductModelByTenant(dbPrefix);
+
+    const products = await ProductModel.find({ visible: true })
       .select(
-        "code description alternativeDescription category subcategory visible sortOrder",
+        "id code description alternativeDescription category subcategory visible sortOrder",
       )
       .sort({ sortOrder: 1 })
-      .lean(); // .lean() optimiza la velocidad devolviendo objetos JS planos de alto rendimiento
+      .lean();
 
     return products;
   } catch (error) {
-    console.error("🚨 Error en productService de la base de datos:", error);
+    console.error(
+      `🚨 Error al consultar el catálogo de productos con prefijo ${dbPrefix}:`,
+      error,
+    );
     throw error;
   }
 };

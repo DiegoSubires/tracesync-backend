@@ -1,25 +1,15 @@
 const productService = require("./products.service");
-const { HomeCatalogSchema } = require("./schemas/products.schema");
+const { HomeCatalogSchema } = require("./products.schema");
 
 exports.getHomeCatalog = async (req, res) => {
   try {
-    const { tenantId } = req.query;
+    // El 'dbPrefix' nos lo ha regalado el middleware limpiamente
+    const { dbPrefix } = req;
 
-    if (!tenantId) {
-      return res
-        .status(400)
-        .json({ error: "El parámetro tenantId es requerido" });
-    }
+    const rawCatalog = await productService.getCatalogByPrefix(dbPrefix);
 
-    // Buscamos el catálogo maestro en la base de datos
-    const rawCatalog = await productService.getCatalogByTenant(tenantId);
-
-    // Validamos el contrato estricto de salida antes de responder
     const validatedCatalog = HomeCatalogSchema.parse(rawCatalog);
 
-    console.log(
-      `📤 [BACKEND] Catálogo maestro enviado para tenant: ${tenantId} (${validatedCatalog.length} productos)`,
-    );
     res.json(validatedCatalog);
   } catch (error) {
     console.error("💥 Error en getHomeCatalog:", error);

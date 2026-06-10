@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { getTenantModel } = require("../../config/tenantConnection");
 
 const ProductSchema = new mongoose.Schema(
   {
@@ -17,15 +18,18 @@ const ProductSchema = new mongoose.Schema(
     unitsPerBox: { type: Number, default: 0 },
     unitsPerCrate: { type: Number, default: 0 },
     sortOrder: { type: Number, default: 0 },
-    tenantId: { type: String, required: true },
   },
   {
-    collection: "mp_chamber_products",
     timestamps: true, // Crea automáticamente createdAt y updatedAt
   },
 );
 
-// Índice compuesto para acelerar las búsquedas por planta y orden de catálogo
-ProductSchema.index({ tenantId: 1, visible: 1, sortOrder: 1 });
+/**
+ * Función puente que solicita la creación del modelo al gestor de infraestructura
+ */
+const getProductModelByTenant = (dbPrefix) => {
+  // Le pasamos el prefijo, la parte fija del nombre de la colección y su esquema local
+  return getTenantModel(dbPrefix, "chamber_products", ProductSchema);
+};
 
-module.exports = mongoose.model("Product", ProductSchema);
+module.exports = { getProductModelByTenant };

@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const productController = require("./products.controller");
+const { tenantResolver } = require("../../middleware/tenantResolver");
 
 /**
  * @openapi
@@ -57,6 +58,6 @@ const productController = require("./products.controller");
  * 500:
  * description: Error interno del servidor al interactuar con la base de datos.
  */
-router.get("/home-catalog", productController.getHomeCatalog);
+router.get("/home-catalog", tenantResolver, productController.getHomeCatalog);
 
 module.exports = router;
