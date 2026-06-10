@@ -1,5 +1,7 @@
 const { z } = require("zod");
 
+// Esquemas para los datos temporales de los recuentos
+
 const BatchLineSchema = z.object({
   batch: z.string().optional(),
   quantity: z.number().nonnegative(),
@@ -45,9 +47,24 @@ const HomeSummarySchema = z.object({
   summary: z.array(HomeSummaryItemSchema),
 });
 
+// Esquemas para la nueva colección de day_status
+
+const DayStatusQuerySchema = z.object({
+  tenantId: z.string({ required_error: "El tenantId es obligatorio" }).min(1),
+  date: z
+    .string({ required_error: "La fecha es obligatoria" })
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "El formato de fecha debe ser YYYY-MM-DD"),
+});
+
+const DayStatusResponseSchema = z.object({
+  finalized: z.boolean(),
+});
+
 module.exports = {
   InventorySchema,
   HomeSummarySchema,
   QuerySchema,
   validateQuery,
+  DayStatusQuerySchema,
+  DayStatusResponseSchema,
 };
