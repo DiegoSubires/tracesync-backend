@@ -2,7 +2,10 @@ const express = require("express");
 const router = express.Router();
 const inventoryController = require("./inventory.controller");
 const { tenantResolver } = require("../../middleware/tenantResolver");
-const { DayStatusQuerySchema, validateQuery } = require("./inventory.schema");
+const {
+  DayStatusQuerySchema,
+  validateQuery,
+} = require(".schemas/inventory.schema");
 
 /**
  * @openapi
