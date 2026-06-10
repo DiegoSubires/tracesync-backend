@@ -1,22 +1,32 @@
 require("dotenv").config();
-
+const mongoose = require("mongoose");
 const app = require("./src/app");
-const { connectDB } = require("./src/config/db");
 
 const PORT = process.env.PORT || 4000;
+const mongoURI = process.env.MONGO_URI || process.env.MONGODB_URI;
+
+if (!mongoURI) {
+  console.error(
+    "🚨 [CRÍTICO] No se ha definido la variable de entorno MONGO_URI",
+  );
+}
 
 async function startServer() {
   try {
-    console.log("⏳ Conectando a MongoDB...");
-    await connectDB();
-    console.log("✅ Conectado a MongoDB");
+    console.log("⏳ Conectando a MongoDB Atlas con Mongoose...");
 
+    // 1. Conectamos Mongoose de manera asíncrona y esperamos a que sea exitoso
+    await mongoose.connect(mongoURI);
+    console.log(
+      "💾 [MONGO] Conexión establecida con éxito a la base de datos.",
+    );
+
+    // 2. Una vez conectados a la base de datos con éxito, levantamos el servidor Express
     app.listen(PORT, () => {
       console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
     });
   } catch (error) {
-    // ESTO ES LO QUE NECESITAMOS VER
-    console.error("❌ ERROR CRÍTICO AL ARRANCAR:", error);
+    console.error("❌ ERROR CRÍTICO AL ARRANCAR EL SERVIDOR:", error);
     process.exit(1);
   }
 }
