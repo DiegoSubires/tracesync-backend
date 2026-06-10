@@ -1,5 +1,5 @@
 const productService = require("./products.service");
-const { HomeCatalogSchema } = require("./products.schema");
+const { HomeCatalogSchema } = require("./schemas/products.schema");
 
 exports.getHomeCatalog = async (req, res) => {
   try {
