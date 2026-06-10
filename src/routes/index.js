@@ -6,11 +6,10 @@ const authMiddleware = require("../middleware/auth.middleware");
 const authRoutes = require("./auth.routes");
 const tenantRoutes = require("./tenant.routes");
 //const productRoutes = require("./product.routes");
-const productRoutes = require("../modules/products/products.routes");
+const productRoutes = require("../modules/products/product.routes");
 //const inventoryRoutes = require("./inventory.routes");
 const inventoryRoutes = require("../modules/inventory/inventory.routes");
 
-// Rutas públicas (Login)
 router.use(authRoutes);
 router.use(tenantRoutes);
 
