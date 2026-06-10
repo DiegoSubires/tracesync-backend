@@ -1,8 +1,8 @@
-const Product = require("./product.model");
+const Product = require("./products.model");
 
 exports.getCatalogByTenant = async (tenantId) => {
   try {
-    // Si usas Mongoose, usamos .select() para traer solo lo indispensable y ganar velocidad
+    // En Mongoose, usamos .select() para traer solo lo indispensable y ganar velocidad
     // Adaptamos el '_id' de Mongo a 'id' para cumplir con el frontend
     const products = await Product.find({ tenantId, visible: true })
       .select(
