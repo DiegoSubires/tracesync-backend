@@ -125,6 +125,47 @@ const getInventorySummary = async (dbPrefix, countDate) => {
 };
 
 /**
+ * Obtiene el detalle de lotes para un producto
+ */
+const getProductCountById = async (dbPrefix, countDate, id) => {
+  if (mongoose.connection.readyState !== 1) {
+    throw new Error("La conexión a MongoDB Atlas no está activa.");
+  }
+
+  const dbTenant = mongoose.connection.useDb("tracesync_tenant", {
+    useCache: true,
+  });
+  const collection = dbTenant.collection(`${dbPrefix}_ch_temporary_counts`);
+
+  // 1. Buscamos el documento completo de recuento (para obtener batchLines)
+  const productDoc = await collection.findOne({
+    countDate: countDate,
+    productId: id,
+  });
+
+  if (!productDoc) return null;
+
+  // 2. Buscamos la descripción en la colección de productos
+  const { getProductModelByTenant } = require("../products/products.model");
+  const ProductModel = getProductModelByTenant(dbPrefix);
+
+  const productInfo = await ProductModel.findOne({ id: id })
+    .select("alternativeDescription")
+    .lean();
+
+  // 3. Consolidamos los datos
+  const consolidateProduct = {
+    id: productDoc.productId,
+    alternativeDescription: productInfo?.alternativeDescription || "Sin nombre",
+    batchLines: productDoc.batchLines || [],
+  };
+
+  //console.log(`[PRODUCT]: ${JSON.stringify(consolidateProduct, null, 2)}`);
+
+  return consolidateProduct;
+};
+
+/**
  * Comprueba si una jornada de inventario está cerrada para una planta específica (Moreno Plaza)
  */
 const isDayFinalized = async (dbPrefix, dateStr) => {
@@ -160,4 +201,4 @@ const isDayFinalized = async (dbPrefix, dateStr) => {
   return dayRecord.finalized === true || dayRecord.status === "finalized";
 };
 
-module.exports = { getInventorySummary, isDayFinalized };
+module.exports = { getInventorySummary, isDayFinalized, getProductCountById };

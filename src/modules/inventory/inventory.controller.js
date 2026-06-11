@@ -1,6 +1,9 @@
 const mongoose = require("mongoose");
 const inventoryService = require("./inventory.service");
-const { HomeSummarySchema } = require("./schemas/inventory.schema");
+const {
+  HomeSummarySchema,
+  BatchDetailSchema,
+} = require("./schemas/inventory.schema");
 
 exports.getDaySummary = async (req, res) => {
   console.log(`\n📢 [PETICIÓN ENTRANTE] GET a la ruta: /api/inventory/summary`);
@@ -20,7 +23,7 @@ exports.getDaySummary = async (req, res) => {
       `\n📊 [Inventory.controller.getDaySummary]: "data" | dbPrefix: "${JSON.stringify(data, null, 2)}"`,
     );*/
 
-    const payloadParaValidar = {
+    const payload = {
       tenantId: req.query.tenantId || dbPrefix, // Mantenemos el ID que espera Zod para validar
       date,
       summary: data,
@@ -30,7 +33,7 @@ exports.getDaySummary = async (req, res) => {
       `\n📊 [Inventory.controller.getDaySummary]: "payload" | dbPrefix: "${JSON.stringify(payloadParaValidar, null, 2)}"`,
     );*/
 
-    const validatedData = HomeSummarySchema.parse(payloadParaValidar);
+    const validatedData = HomeSummarySchema.parse(payload);
 
     /*console.log(
       `\n📊 [Inventory.controller.getDaySummary]: "validatedData" | dbPrefix: "${JSON.stringify(validatedData, null, 2)}"`,
@@ -84,5 +87,60 @@ exports.getDayStatus = async (req, res) => {
     return res.status(500).json({
       error: "Error interno en el servidor al verificar el cierre de jornada.",
     });
+  }
+};
+
+/**
+ * Obtiene el estado de cierre (finalizado) de una jornada específica
+ */
+exports.getProductDetail = async (req, res) => {
+  console.log(
+    `\n📢 [PETICIÓN ENTRANTE] GET a la ruta: /api/inventory/ProductId`,
+  );
+
+  try {
+    const { date, id } = req.query;
+    const dbPrefix = req.dbPrefix;
+
+    const data = await inventoryService.getProductCountById(dbPrefix, date, id);
+
+    if (!data) {
+      return res.status(404).json({ error: "Producto no encontrado" });
+    }
+
+    const payload = {
+      tenantId: req.query.tenantId || dbPrefix,
+      date: date,
+      product: {
+        alternativeDescription:
+          data.alternativeDescription || "Sin descripción",
+        id: data.id || id,
+        batchLines: data.batchLines || [],
+      },
+    };
+
+    /*console.log(
+      `\n📊 [Inventory.controller.getDaySummary]: "payload" | dbPrefix: "${JSON.stringify(payloadParaValidar, null, 2)}"`,
+    );*/
+
+    const validatedData = BatchDetailSchema.parse(payload);
+
+    /*console.log(
+      `\n📊 [Inventory.controller.getDaySummary]: "validatedData" | dbPrefix: "${JSON.stringify(validatedData, null, 2)}"`,
+    );*/
+
+    //console.log("📤 [BACKEND] Respuesta Home enviada correctamente.");
+    return res.json(validatedData);
+  } catch (error) {
+    // Si el error es de Zod, esto te ayudará a saber qué campo falló
+    if (error.name === "ZodError") {
+      console.error("💥 Error de validación Zod:", error.issues);
+      return res
+        .status(400)
+        .json({ error: "Datos de producto inválidos", details: error.issues });
+    }
+
+    console.error("💥 Error crítico en getProductDetail:", error);
+    return res.status(500).json({ error: "Error al obtener resumen" });
   }
 };

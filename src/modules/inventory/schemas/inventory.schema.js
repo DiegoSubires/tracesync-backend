@@ -27,6 +27,14 @@ const QuerySchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/, "El formato debe ser YYYY-MM-DD"),
 });
 
+const QueryIdSchema = z.object({
+  tenantId: z.string().min(1),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "El formato debe ser YYYY-MM-DD"),
+  id: z.string().min(1),
+});
+
 // Middleware genérico para usarlo en tus rutas
 const validateQuery = (schema) => (req, res, next) => {
   const result = schema.safeParse(req.query);
@@ -63,11 +71,28 @@ const DayStatusResponseSchema = z.object({
   finalized: z.boolean(),
 });
 
+// Esquemas para BatchDetail
+
+const BatchDetailItemSchema = z.object({
+  alternativeDescription: z.string().optional(),
+  id: z.string(),
+  batchLines: z.array(BatchLineSchema),
+});
+
+const BatchDetailSchema = z.object({
+  tenantId: z.string(),
+  date: z.string(),
+  product: BatchDetailItemSchema,
+});
+
 module.exports = {
   InventorySchema,
   HomeSummarySchema,
   QuerySchema,
+  QueryIdSchema,
   validateQuery,
   DayStatusQuerySchema,
   DayStatusResponseSchema,
+  BatchDetailItemSchema,
+  BatchDetailSchema,
 };

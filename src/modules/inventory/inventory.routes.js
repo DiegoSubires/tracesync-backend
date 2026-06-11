@@ -6,6 +6,7 @@ const {
   DayStatusQuerySchema,
   validateQuery,
   QuerySchema,
+  QueryIdSchema,
 } = require("./schemas/inventory.schema");
 
 /**
@@ -39,7 +40,7 @@ const {
 router.get(
   "/summary",
   tenantResolver,
-  validateQuery(QuerySchema),
+  validateQuery(QueryIdSchema),
   inventoryController.getDaySummary,
 );
 
@@ -83,6 +84,13 @@ router.get(
   validateQuery(DayStatusQuerySchema), // 1º Validamos que los parámetros vengan limpios
   tenantResolver, // 2º Resolvemos el tenantId transformándolo a prefijo ("mp")
   inventoryController.getDayStatus, // 3º Ejecutamos la lógica del controlador
+);
+
+router.get(
+  "/product-id",
+  tenantResolver,
+  validateQuery(QuerySchema),
+  inventoryController.getProductDetail,
 );
 
 module.exports = router;
