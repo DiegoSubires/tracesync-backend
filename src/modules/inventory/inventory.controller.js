@@ -9,12 +9,16 @@ exports.getDaySummary = async (req, res) => {
     const { date } = req.query;
     const dbPrefix = req.dbPrefix; // 🎯 Usamos el prefijo resuelto ("mp") en vez del tenantId crudo
 
-    console.log(
+    /*console.log(
       `   📥 [CONTROLADOR SUMMARY] Query recibida -> Fecha: "${date}" | dbPrefix: "${dbPrefix}"`,
-    );
+    );*/
 
     // Invocamos pasándole el prefijo unificado
     const data = await inventoryService.getInventorySummary(dbPrefix, date);
+
+    /*console.log(
+      `\n📊 [Inventory.controller.getDaySummary]: "data" | dbPrefix: "${JSON.stringify(data, null, 2)}"`,
+    );*/
 
     const payloadParaValidar = {
       tenantId: req.query.tenantId || dbPrefix, // Mantenemos el ID que espera Zod para validar
@@ -22,9 +26,17 @@ exports.getDaySummary = async (req, res) => {
       summary: data,
     };
 
+    /*console.log(
+      `\n📊 [Inventory.controller.getDaySummary]: "payload" | dbPrefix: "${JSON.stringify(payloadParaValidar, null, 2)}"`,
+    );*/
+
     const validatedData = HomeSummarySchema.parse(payloadParaValidar);
 
-    console.log("📤 [BACKEND] Respuesta Home enviada correctamente.");
+    /*console.log(
+      `\n📊 [Inventory.controller.getDaySummary]: "validatedData" | dbPrefix: "${JSON.stringify(validatedData, null, 2)}"`,
+    );*/
+
+    //console.log("📤 [BACKEND] Respuesta Home enviada correctamente.");
     return res.json(validatedData);
   } catch (error) {
     console.error(

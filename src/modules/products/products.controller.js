@@ -8,6 +8,8 @@ exports.getHomeCatalog = async (req, res) => {
 
     const rawCatalog = await productService.getCatalogByPrefix(dbPrefix);
 
+    console.log(rawCatalog);
+
     const validatedCatalog = HomeCatalogSchema.parse(rawCatalog);
 
     res.json(validatedCatalog);

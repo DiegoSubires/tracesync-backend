@@ -11,6 +11,10 @@ if (!mongoURI) {
   );
 }
 
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor en modo local iniciado en http://localhost:${PORT}`);
+});
+
 async function startServer() {
   try {
     console.log("⏳ Conectando a MongoDB Atlas con Mongoose...");

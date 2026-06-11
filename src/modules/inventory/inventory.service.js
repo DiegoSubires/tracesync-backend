@@ -1,64 +1,78 @@
 const mongoose = require("mongoose");
 //const { getDbTenant } = require("../../config/db");
 
-/*const getInventorySummary = async (tenantId, countDate) => {
-  const db = getDbTenant(tenantId);
-
-  // Agregación para obtener solo productId y totalQuantity
-  const summary = await db
-    .collection("mp_ch_temporary_counts")
-    .aggregate([
-      { $match: { countDate: countDate } },
-      { $unwind: "$batchLines" },
-      {
-        $group: {
-          _id: "$productId",
-          totalQuantity: { $sum: "$batchLines.quantity" },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          productId: "$_id",
-          totalQuantity: 1,
-        },
-      },
-    ])
-    .toArray();
-
-  return summary;
-};*/
-
 /**
  * Obtiene el resumen consolidado para el Home de la planta
  */
 const getInventorySummary = async (dbPrefix, countDate) => {
-  console.log(`\n📊 [AUDITORÍA SUMMARY] Inicio de getInventorySummary`);
-  console.log(`   👉 dbPrefix deducido: "${dbPrefix}"`);
-  console.log(`   👉 countDate recibido: "${countDate}"`);
-
   if (mongoose.connection.readyState !== 1) {
     throw new Error("La conexión a MongoDB Atlas no está activa.");
   }
 
-  // Usamos el mismo punto de conexión exacto y fiable
   const dbTenant = mongoose.connection.useDb("tracesync_tenant", {
     useCache: true,
   });
-
-  // Si tus colecciones de conteos también llevan el prefijo dinámico en "tracesync_tenant"
   const targetCollection = `${dbPrefix}_ch_temporary_counts`;
+  const collection = dbTenant.collection(targetCollection);
+
+  /*console.log(
+    `\n📊 [Inventory.service.getInventorySummary]:  Inicio de getInventorySummary`,
+  );
+  console.log(`dbPrefix deducido: "${dbPrefix}"`);
+  console.log(`countDate recibido: "${countDate}"`);
+  console.log("[DEBUG DB] Detalles de la conexión:");
+  console.log("- Nombre de la BD:", dbTenant.name);
+  console.log("- Estado (1=conectado):", dbTenant.readyState);
+  console.log("- Host:", dbTenant.host);
+  console.log("- Puerto:", dbTenant.port);
   console.log(
     `   📂 [AUDITORÍA SUMMARY] Apuntando a la colección: "${targetCollection}"`,
   );
-
-  const collection = dbTenant.collection(targetCollection);
-
   console.log(
     `   ⏳ [AUDITORÍA SUMMARY] Ejecutando agregación en Atlas para la fecha: ${countDate}...`,
   );
+  console.log("🔍 [DEBUG COLLECTION] Detalles de la colección:");
+  console.log("- Nombre:", collection.collectionName);
+  console.log("- Namespace:", collection.namespace);
+  
+  //SUMMARY
+  console.log(
+    `   ✅ [AUDITORÍA SUMMARY] Agregación completada. Items encontrados: ${summary.length}`,
+  );
+  console.log(
+    `🔍 [DEBUG - DATA] - Resultado de la consulta:`,
+    JSON.stringify(summary, null, 2),
+  );
+  console.table(summary);
+  console.dir(summary, { depth: null, colors: true });
+  
+  // Modelo getProductModelByTenant 
+  
+  console.log(
+    `Nombre del modelo: "${getProductModelByTenant(dbPrefix).modelName}"`,
+  );
+  console.log(
+    `Colección vinculada: "${getProductModelByTenant(dbPrefix).collectionName}"`,
+  );
 
-  const summary = await collection
+  console.log(
+    `Nombre de la bd con dbName: "${getProductModelByTenant(dbPrefix).dbName}"`,
+  );
+  console.log(
+    `Nombre de la bd con db.name: "${getProductModelByTenant(dbPrefix).db.name}"`,
+  );
+  console.log(
+    "✅ [DEBUG] ¿Está el modelo listo?:",
+    typeof getProductModelByTenant(dbPrefix).find === "function",
+  );
+
+  console.log(`[PRODUCTS]: ${JSON.stringify(products, null, 2)}`);
+
+  //console.log(finalInventory);
+  console.log(`[PRODUCTS]: ${JSON.stringify(finalInventory, null, 2)}`);
+  */
+
+  const prevSummary = await collection
     .aggregate([
       { $match: { countDate: countDate } },
       { $unwind: "$batchLines" },
@@ -78,9 +92,33 @@ const getInventorySummary = async (dbPrefix, countDate) => {
     ])
     .toArray();
 
-  console.log(
-    `   ✅ [AUDITORÍA SUMMARY] Agregación completada. Items encontrados: ${summary.length}`,
+  const summaryMap = new Map(
+    prevSummary.map((item) => [item.productId, item.totalQuantity]),
   );
+
+  const { getProductModelByTenant } = require("../products/products.model");
+
+  const products = await getProductModelByTenant(dbPrefix)
+    .find({
+      visible: true,
+      category: { $in: ["Frescos Granel", "Frescos Pequeña"] },
+    })
+    .select(
+      "id code description alternativeDescription category subcategory visible sortOrder",
+    )
+    .sort({ sortOrder: 1 })
+    .lean();
+
+  const summary = products.map((product) => {
+    const total = summaryMap.get(product.id) || 0;
+
+    return {
+      id: product.id,
+      alternativeDescription: product.alternativeDescription,
+      totalQuantity: total,
+    };
+  });
+
   return summary;
 };
 

@@ -37,7 +37,8 @@ const validateQuery = (schema) => (req, res, next) => {
 
 // Define la estructura de cada producto individual en el resumen
 const HomeSummaryItemSchema = z.object({
-  productId: z.string(),
+  alternativeDescription: z.string().optional(),
+  id: z.string(),
   totalQuantity: z.number().nonnegative(),
 });
 
