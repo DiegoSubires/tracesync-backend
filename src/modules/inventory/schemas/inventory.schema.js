@@ -39,6 +39,8 @@ const validateQuery = (schema) => (req, res, next) => {
 const HomeSummaryItemSchema = z.object({
   alternativeDescription: z.string().optional(),
   id: z.string(),
+  category: z.string(),
+  subcategory: z.string().optional(),
   totalQuantity: z.number().nonnegative(),
 });
 

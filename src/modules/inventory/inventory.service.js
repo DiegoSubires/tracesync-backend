@@ -115,6 +115,8 @@ const getInventorySummary = async (dbPrefix, countDate) => {
     return {
       id: product.id,
       alternativeDescription: product.alternativeDescription,
+      category: product.category,
+      subcategory: product.subcategory,
       totalQuantity: total,
     };
   });
