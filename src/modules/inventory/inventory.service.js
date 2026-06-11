@@ -113,7 +113,7 @@ const getInventorySummary = async (dbPrefix, countDate) => {
     const total = summaryMap.get(product.id) || 0;
 
     return {
-      id: product.id,
+      id: product.id?.toString() || "id-desconocido",
       alternativeDescription: product.alternativeDescription,
       category: product.category,
       subcategory: product.subcategory,

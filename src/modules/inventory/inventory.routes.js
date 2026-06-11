@@ -40,7 +40,7 @@ const {
 router.get(
   "/summary",
   tenantResolver,
-  validateQuery(QueryIdSchema),
+  validateQuery(QuerySchema),
   inventoryController.getDaySummary,
 );
 
