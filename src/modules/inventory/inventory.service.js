@@ -157,7 +157,7 @@ const getProductCountById = async (dbPrefix, countDate, id) => {
   const consolidateProduct = {
     id: productDoc.productId,
     alternativeDescription: productInfo?.alternativeDescription || "Sin nombre",
-    unitsPerCrate: productInfo?.unitsPerCrate || 0,
+    unitsPerCrate: Number(productInfo?.unitsPerCrate ?? 0),
     batchLines: productDoc.batchLines || [],
   };
 
