@@ -150,13 +150,14 @@ const getProductCountById = async (dbPrefix, countDate, id) => {
   const ProductModel = getProductModelByTenant(dbPrefix);
 
   const productInfo = await ProductModel.findOne({ id: id })
-    .select("alternativeDescription")
+    .select("alternativeDescription unitsPerCrate")
     .lean();
 
   // 3. Consolidamos los datos
   const consolidateProduct = {
     id: productDoc.productId,
     alternativeDescription: productInfo?.alternativeDescription || "Sin nombre",
+    unitsPerCrate: productInfo?.unitsPerCrate || 0,
     batchLines: productDoc.batchLines || [],
   };
 
