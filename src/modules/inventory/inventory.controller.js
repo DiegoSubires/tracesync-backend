@@ -23,21 +23,10 @@ exports.getDaySummary = async (req, res) => {
       `\n📊 [Inventory.controller.getDaySummary]: "data" | dbPrefix: "${JSON.stringify(data, null, 2)}"`,
     );*/
 
-    // 🛡️ NORMALIZACIÓN DE DATOS: Aseguramos el contrato de Zod
-    const summarySanitized = (Array.isArray(data) ? data : []).map((item) => ({
-      alternativeDescription: item.alternativeDescription || "",
-      // Si el ID falta, intentamos usar _id, si tampoco hay, asignamos un placeholder
-      id: item.id || item._id?.toString() || "id-desconocido",
-      category: item.category || "SIN CATEGORIA",
-      subcategory: item.subcategory || "",
-      // Forzamos que sea un número (Zod falla si recibe string)
-      totalQuantity: Number(item.totalQuantity || 0),
-    }));
-
     const payload = {
       tenantId: req.query.tenantId || dbPrefix,
       date,
-      summary: summarySanitized,
+      summary: data,
     };
 
     /*console.log(
@@ -49,6 +38,12 @@ exports.getDaySummary = async (req, res) => {
     );
 
     const validatedData = HomeSummarySchema.parse(payload);
+
+    /*console.log(
+      `\n📊 [Inventory.controller.getDaySummary]: "validatedData" | dbPrefix: "${JSON.stringify(validatedData, null, 2)}"`,
+    );*/
+
+    //console.log("📤 [BACKEND] Respuesta Home enviada correctamente.");
     return res.json(validatedData);
   } catch (error) {
     console.error(
