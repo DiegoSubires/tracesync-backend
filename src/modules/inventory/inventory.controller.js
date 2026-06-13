@@ -149,3 +149,28 @@ exports.getProductDetail = async (req, res) => {
     return res.status(500).json({ error: "Error al obtener resumen" });
   }
 };
+
+/**
+ * Guarda el recuento temporal por artículo
+ */
+exports.saveTemporaryCount = async (req, res) => {
+  try {
+    // 1. Validamos el cuerpo con Zod
+    const validatedData = SaveTemporaryCountSchema.parse(req.body);
+
+    // 2. Usamos el dbPrefix que ya resuelves en tu middleware
+    const dbPrefix = req.dbPrefix;
+
+    await inventoryService.saveTemporaryCount(dbPrefix, validatedData);
+
+    return res.json({ success: true, message: "Borrador guardado con éxito." });
+  } catch (error) {
+    if (error.name === "ZodError") {
+      return res
+        .status(400)
+        .json({ error: "Datos inválidos", details: error.issues });
+    }
+    console.error("❌ Error en saveTemporaryCount:", error.message);
+    return res.status(500).json({ error: "Error al guardar el borrador" });
+  }
+};
