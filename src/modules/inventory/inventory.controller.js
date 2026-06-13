@@ -119,6 +119,7 @@ exports.getProductDetail = async (req, res) => {
         alternativeDescription:
           data.alternativeDescription || "Sin descripción",
         id: data.id || id,
+        unitsPerCrate: data.unitsPerCrate,
         batchLines: data.batchLines || [],
       },
     };
