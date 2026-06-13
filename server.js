@@ -1,4 +1,4 @@
-require("dotenv").config();
+/*require("dotenv").config();
 const mongoose = require("mongoose");
 const app = require("./src/app");
 
@@ -11,9 +11,9 @@ if (!mongoURI) {
   );
 }
 
-app.listen(PORT, () => {
+/*app.listen(PORT, () => {
   console.log(`🚀 Servidor en modo local iniciado en http://localhost:${PORT}`);
-});
+});//
 
 async function startServer() {
   try {
@@ -35,4 +35,20 @@ async function startServer() {
   }
 }
 
-startServer();
+startServer();*/
+
+require("dotenv").config();
+const connectDB = require("./src/config/mongoose");
+const app = require("./src/app");
+
+const PORT = process.env.PORT || 4000;
+
+async function start() {
+  await connectDB(); // Espera a conectar antes de escuchar
+
+  app.listen(PORT, () => {
+    console.log(`🚀 Servidor en http://localhost:${PORT}`);
+  });
+}
+
+start();
