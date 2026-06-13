@@ -202,4 +202,48 @@ const isDayFinalized = async (dbPrefix, dateStr) => {
   return dayRecord.finalized === true || dayRecord.status === "finalized";
 };
 
-module.exports = { getInventorySummary, isDayFinalized, getProductCountById };
+/**
+ * Guarda el recuento temporal por artículo
+ */
+const saveTemporaryCount = async (dbPrefix, data) => {
+  const { productId, countDate, batchLines } = data;
+
+  if (mongoose.connection.readyState !== 1) {
+    throw new Error("La conexión a MongoDB Atlas no está activa.");
+  }
+
+  const dbTenant = mongoose.connection.useDb("tracesync_tenant", {
+    useCache: true,
+  });
+  const collection = dbTenant.collection(`${dbPrefix}_ch_temporary_counts`);
+
+  const sanitizedBatches = batchLines.map((line) => ({
+    ...line,
+    // Si batch es null, undefined o "", guardamos "Sin Lote"
+    batch:
+      line.batch && line.batch.trim() !== "" ? line.batch.trim() : "Sin Lote",
+  }));
+
+  // Definimos la estructura exacta que queremos persistir
+  const updatePayload = {
+    productId,
+    countDate,
+    batchLines: sanitizedBatches,
+    updatedAt: new Date().toISOString(),
+    lastUpdatedBy: operator || "Sistema",
+  };
+
+  // Ejecutamos una única operación atómica
+  return await collection.findOneAndUpdate(
+    { productId, countDate },
+    { $set: updatePayload },
+    { upsert: true, returnDocument: "after" },
+  );
+};
+
+module.exports = {
+  getInventorySummary,
+  isDayFinalized,
+  getProductCountById,
+  saveTemporaryCount,
+};

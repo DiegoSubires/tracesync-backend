@@ -3,11 +3,11 @@ const { z } = require("zod");
 // Esquemas para los datos temporales de los recuentos
 
 const BatchLineSchema = z.object({
-  batch: z.string().optional(),
+  batch: z.string().nullable().optional().or(z.literal("")),
   quantity: z.number().nonnegative(),
   crates: z.number().nonnegative(),
   looseUnits: z.number().nonnegative(),
-  packingDate: z.string().nullable(), // o z.date()
+  packingDate: z.string().nullable().optional(),
   elapsedDays: z.number().int(),
 });
 
@@ -83,8 +83,31 @@ const BatchDetailItemSchema = z.object({
 const BatchDetailSchema = z.object({
   tenantId: z.string(),
   date: z.string(),
+  operator: z.string().optional(),
   product: BatchDetailItemSchema,
 });
+
+// Esquemas para guardar los recuentos temporales
+
+const SaveTemporaryCountSchema = z.object({
+  tenantId: z.string().min(1),
+  productId: z.string().min(1),
+  countDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  batchLines: z.array(BatchLineSchema),
+  updatedAt: z.string().datetime().optional(),
+  operator: z.string().optional(),
+});
+
+const validateBody = (schema) => (req, res, next) => {
+  try {
+    req.body = schema.parse(req.body); // Sobrescribe el body con los datos validados
+    next();
+  } catch (error) {
+    return res
+      .status(400)
+      .json({ error: "Datos de cuerpo inválidos", details: error.issues });
+  }
+};
 
 module.exports = {
   InventorySchema,
@@ -96,4 +119,6 @@ module.exports = {
   DayStatusResponseSchema,
   BatchDetailItemSchema,
   BatchDetailSchema,
+  SaveTemporaryCountSchema,
+  validateBody,
 };

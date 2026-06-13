@@ -7,6 +7,8 @@ const {
   validateQuery,
   QuerySchema,
   QueryIdSchema,
+  validateBody,
+  SaveTemporaryCountSchema,
 } = require("./schemas/inventory.schema");
 
 /**
@@ -86,11 +88,96 @@ router.get(
   inventoryController.getDayStatus, // 3º Ejecutamos la lógica del controlador
 );
 
+/**
+ * @openapi
+ * /inventory/product-id:
+ * get:
+ * summary: Obtiene el detalle de un producto con sus lotes (batchLines)
+ * parameters:
+ * - in: query
+ * name: tenantId
+ * required: true
+ * schema: { type: string }
+ * - in: query
+ * name: date
+ * required: true
+ * schema: { type: string }
+ * - in: query
+ * name: id
+ * required: true
+ * schema: { type: string }
+ * responses:
+ * 200:
+ * description: Detalle del producto obtenido con éxito
+ * content:
+ * application/json:
+ * schema:
+ * type: object
+ * properties:
+ * tenantId: { type: string }
+ * date: { type: string }
+ * product:
+ * type: object
+ * properties:
+ * id: { type: string }
+ * alternativeDescription: { type: string }
+ * unitsPerCrate: { type: number }
+ * batchLines:
+ * type: array
+ * items:
+ * type: object
+ * properties:
+ * batch: { type: string }
+ * quantity: { type: number }
+ * crates: { type: number }
+ * looseUnits: { type: number }
+ * packingDate: { type: string }
+ * elapsedDays: { type: number }
+ * 404:
+ * description: Producto no encontrado
+ * 500:
+ * description: Error al obtener el detalle
+ */
 router.get(
   "/product-id",
   tenantResolver,
   validateQuery(QuerySchema),
   inventoryController.getProductDetail,
+);
+
+/**
+ * @openapi
+ * /inventory/temporary:
+ * put:
+ * summary: Guarda o actualiza un borrador de recuento temporal
+ * requestBody:
+ * required: true
+ * content:
+ * application/json:
+ * schema:
+ * type: object
+ * required: [tenantId, productId, countDate, batchLines]
+ * properties:
+ * tenantId: { type: string }
+ * productId: { type: string }
+ * countDate: { type: string, format: date, example: "2026-06-08" }
+ * updatedAt: { type: string, format: date-time }
+ * operator: { type: string, description: "Nombre del operario que realiza el recuento" }
+ * batchLines:
+ * type: array
+ * items:
+ * $ref: '#/components/schemas/BatchLine'
+ * responses:
+ * 200:
+ * description: Borrador guardado con éxito
+ * 400:
+ * description: Datos inválidos
+ */
+router.put(
+  "/temporary",
+  tenantResolver,
+  validateBody(SaveTemporaryCountSchema),
+  inventoryController.saveTemporaryCount,
 );
 
 module.exports = router;
