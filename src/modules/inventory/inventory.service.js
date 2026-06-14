@@ -206,7 +206,7 @@ const isDayFinalized = async (dbPrefix, dateStr) => {
  * Guarda el recuento temporal por artículo
  */
 const saveTemporaryCount = async (dbPrefix, data) => {
-  const { productId, countDate, batchLines } = data;
+  const { productId, countDate, batchLines, operator } = data;
 
   if (mongoose.connection.readyState !== 1) {
     throw new Error("La conexión a MongoDB Atlas no está activa.");
