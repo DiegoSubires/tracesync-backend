@@ -165,12 +165,12 @@ exports.saveTemporaryCount = async (req, res) => {
 
     return res.json({ success: true, message: "Borrador guardado con éxito." });
   } catch (error) {
-    if (error.name === "ZodError") {
-      return res
-        .status(400)
-        .json({ error: "Datos inválidos", details: error.issues });
-    }
-    console.error("❌ Error en saveTemporaryCount:", error.message);
-    return res.status(500).json({ error: "Error al guardar el borrador" });
+    console.error("💥 ERROR DETALLADO EN BACKEND:", error);
+
+    return res.status(500).json({
+      error: "Error al guardar el borrador",
+      details: error.message,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+    });
   }
 };
