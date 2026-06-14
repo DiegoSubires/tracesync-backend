@@ -3,6 +3,7 @@ const inventoryService = require("./inventory.service");
 const {
   HomeSummarySchema,
   BatchDetailSchema,
+  SaveTemporaryCountSchema,
 } = require("./schemas/inventory.schema");
 
 exports.getDaySummary = async (req, res) => {
