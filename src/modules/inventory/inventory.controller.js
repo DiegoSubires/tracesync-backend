@@ -99,7 +99,7 @@ exports.getDayStatus = async (req, res) => {
 /**
  * Obtiene el estado de cierre (finalizado) de una jornada específica
  */
-exports.getProductDetail = async (req, res) => {
+/*exports.getProductDetail = async (req, res) => {
   console.log(
     `\n📢 [PETICIÓN ENTRANTE] GET a la ruta: /api/inventory/ProductId`,
   );
@@ -128,13 +128,13 @@ exports.getProductDetail = async (req, res) => {
 
     /*console.log(
       `\n📊 [Inventory.controller.getDaySummary]: "payload" | dbPrefix: "${JSON.stringify(payloadParaValidar, null, 2)}"`,
-    );*/
+    );//
 
     const validatedData = BatchDetailSchema.parse(payload);
 
     /*console.log(
       `\n📊 [Inventory.controller.getDaySummary]: "validatedData" | dbPrefix: "${JSON.stringify(validatedData, null, 2)}"`,
-    );*/
+    );//
 
     //console.log("📤 [BACKEND] Respuesta Home enviada correctamente.");
     return res.json(validatedData);
@@ -150,7 +150,34 @@ exports.getProductDetail = async (req, res) => {
     console.error("💥 Error crítico en getProductDetail:", error);
     return res.status(500).json({ error: "Error al obtener resumen" });
   }
-};
+};*/
+exports.getProductDetail = asyncHandler(async (req, res) => {
+  const { date, id } = req.query;
+  const dbPrefix = req.dbPrefix;
+
+  const data = await inventoryService.getProductCountById(dbPrefix, date, id);
+
+  const productData = data || {
+    id: id,
+    alternativeDescription: "Nuevo recuento",
+    batchLines: [],
+    unitsPerCrate: 0,
+  };
+
+  const payload = {
+    tenantId: req.query.tenantId || dbPrefix,
+    date: date,
+    product: {
+      alternativeDescription: productData.alternativeDescription,
+      id: productData.id,
+      unitsPerCrate: productData.unitsPerCrate,
+      batchLines: productData.batchLines || [],
+    },
+  };
+
+  const validatedData = BatchDetailSchema.parse(payload);
+  return res.json(validatedData);
+});
 
 /**
  * Guarda el recuento temporal por artículo
