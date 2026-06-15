@@ -6,7 +6,7 @@ const {
   SaveTemporaryCountSchema,
 } = require("./schemas/inventory.schema");
 const asyncHandler = require("../../utils/asyncHandler").default;
-const { getInitialProductState } = require("./utils/inventoryDefaults");
+const { getInitialProductState } = require("../../utils/inventoryDefaults");
 
 exports.getDaySummary = async (req, res) => {
   console.log(`\n📢 [PETICIÓN ENTRANTE] GET a la ruta: /api/inventory/summary`);
@@ -153,7 +153,7 @@ exports.getDayStatus = async (req, res) => {
   }
 };*/
 
-exports.getProductDetail = asyncHandler(async (req, res) => {
+/*exports.getProductDetail = asyncHandler(async (req, res) => {
   const { date, id } = req.query;
   const dbPrefix = req.dbPrefix;
 
@@ -181,6 +181,40 @@ exports.getProductDetail = asyncHandler(async (req, res) => {
         productInfo?.alternativeDescription || "Sin descripción",
       unitsPerCrate: Number(productInfo?.unitsPerCrate ?? 0),
       // Aquí aplicamos la lógica: si hay datos temporales, úsalos; si no, devuelve []
+      batchLines: temporalData?.batchLines || [],
+    },
+  };
+
+  const validatedData = BatchDetailSchema.parse(payload);
+  return res.json(validatedData);
+});*/
+exports.getProductDetail = asyncHandler(async (req, res) => {
+  const { date, id } = req.query;
+  const dbPrefix = req.dbPrefix;
+
+  // 1. Obtenemos el maestro y el temporal
+  const { getProductModelByTenant } = require("../products/products.model");
+  const ProductModel = getProductModelByTenant(dbPrefix);
+  const productInfo = await ProductModel.findOne({ id: id })
+    .select("alternativeDescription unitsPerCrate")
+    .lean();
+
+  const temporalData = await inventoryService.getProductCountById(
+    dbPrefix,
+    date,
+    id,
+  );
+
+  // 2. Usamos el inicializador para obtener una base limpia
+  // Si no hay productInfo, al menos inicializamos con el ID
+  const baseProduct = getInitialProductState(productInfo || { id });
+
+  // 3. Consolidamos: Mezclamos la base con los datos temporales si existen
+  const payload = {
+    tenantId: req.query.tenantId || dbPrefix,
+    date: date,
+    product: {
+      ...baseProduct,
       batchLines: temporalData?.batchLines || [],
     },
   };
