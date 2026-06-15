@@ -5,7 +5,8 @@ const {
   BatchDetailSchema,
   SaveTemporaryCountSchema,
 } = require("./schemas/inventory.schema");
-const asyncHandler = require("../../utils/asyncHandler");
+const asyncHandler = require("../../utils/asyncHandler").default;
+const { getInitialProductState } = require("./utils/inventoryDefaults");
 
 exports.getDaySummary = async (req, res) => {
   console.log(`\n📢 [PETICIÓN ENTRANTE] GET a la ruta: /api/inventory/summary`);
@@ -151,27 +152,36 @@ exports.getDayStatus = async (req, res) => {
     return res.status(500).json({ error: "Error al obtener resumen" });
   }
 };*/
+
 exports.getProductDetail = asyncHandler(async (req, res) => {
   const { date, id } = req.query;
   const dbPrefix = req.dbPrefix;
 
-  const data = await inventoryService.getProductCountById(dbPrefix, date, id);
+  // 1. Obtenemos el producto del MAESTRO (Catálogo)
+  const { getProductModelByTenant } = require("../products/products.model");
+  const ProductModel = getProductModelByTenant(dbPrefix);
+  const productInfo = await ProductModel.findOne({ id: id })
+    .select("alternativeDescription unitsPerCrate")
+    .lean();
 
-  const productData = data || {
-    id: id,
-    alternativeDescription: "Nuevo recuento",
-    batchLines: [],
-    unitsPerCrate: productData.unitsPerCrate,
-  };
+  // 2. Obtenemos el recuento temporal SI EXISTE
+  const temporalData = await inventoryService.getProductCountById(
+    dbPrefix,
+    date,
+    id,
+  );
 
+  // 3. Consolidamos: Si no hay temporal, usamos el inicializador, si hay, mezclamos.
   const payload = {
     tenantId: req.query.tenantId || dbPrefix,
     date: date,
     product: {
-      alternativeDescription: productData.alternativeDescription,
-      id: productData.id,
-      unitsPerCrate: productData.unitsPerCrate,
-      batchLines: productData.batchLines || [],
+      id: id,
+      alternativeDescription:
+        productInfo?.alternativeDescription || "Sin descripción",
+      unitsPerCrate: Number(productInfo?.unitsPerCrate ?? 0),
+      // Aquí aplicamos la lógica: si hay datos temporales, úsalos; si no, devuelve []
+      batchLines: temporalData?.batchLines || [],
     },
   };
 
