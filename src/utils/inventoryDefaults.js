@@ -1,5 +1,5 @@
 // Este archivo sirve tanto para el backend como para el frontend (si usas TypeScript/JS compartido)
-const getEmptyBatchLine = () => ({
+export const getEmptyBatchLine = () => ({
   batch: "",
   quantity: 0,
   crates: 0,
@@ -8,12 +8,10 @@ const getEmptyBatchLine = () => ({
   elapsedDays: 0,
 });
 
-const getInitialProductState = (productInfo) => ({
+export const getInitialProductState = (productInfo) => ({
   id: productInfo.id,
   alternativeDescription:
     productInfo.alternativeDescription || "Sin descripción",
   unitsPerCrate: productInfo.unitsPerCrate || 0,
-  batchLines: [], // Dejamos vacío o [getEmptyBatchLine()]
+  batchLines: [],
 });
-
-export default { getEmptyBatchLine, getInitialProductState };
