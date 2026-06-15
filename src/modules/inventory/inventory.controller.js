@@ -161,7 +161,7 @@ exports.getProductDetail = asyncHandler(async (req, res) => {
     id: id,
     alternativeDescription: "Nuevo recuento",
     batchLines: [],
-    unitsPerCrate: 0,
+    unitsPerCrate: productData.unitsPerCrate,
   };
 
   const payload = {
