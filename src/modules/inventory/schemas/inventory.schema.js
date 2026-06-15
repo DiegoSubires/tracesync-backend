@@ -127,17 +127,18 @@ const BatchLineFinalSchema = z.object({
   quantity: z.number().int().nonnegative(),
 });
 
+// 2. Luego la pieza intermedia (ProductFinalizationSchema) que usa BatchLineFinalSchema
 const ProductFinalizationSchema = z.object({
   productId: z.string(),
   batchLines: z.array(BatchLineFinalSchema),
 });
 
-// Contrato que recibirá el POST /finalize
+// 3. Finalmente el contrato principal (FinalizeInventoryPayloadSchema) que usa ProductFinalizationSchema
 const FinalizeInventoryPayloadSchema = z.object({
   tenantId: z.string().min(1),
   countDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   operatorName: z.string().min(1),
-  products: z.array(ProductFinalizationSchema),
+  products: z.array(ProductFinalizationSchema), // Ahora ProductFinalizationSchema ya existe
   comments: z.string().optional().default(""),
 });
 
