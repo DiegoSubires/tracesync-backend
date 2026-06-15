@@ -75,9 +75,9 @@ const DayStatusResponseSchema = z.object({
 
 const BatchDetailItemSchema = z.object({
   alternativeDescription: z.string().optional(),
-  id: z.string(),
+  id: z.string().min(1),
   unitsPerCrate: z.number().nonnegative().optional().nullable(),
-  batchLines: z.array(BatchLineSchema),
+  batchLines: z.array(BatchLineSchema).default([]),
 });
 
 const BatchDetailSchema = z.object({

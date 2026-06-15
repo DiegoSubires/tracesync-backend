@@ -188,7 +188,7 @@ exports.getDayStatus = async (req, res) => {
   const validatedData = BatchDetailSchema.parse(payload);
   return res.json(validatedData);
 });*/
-exports.getProductDetail = asyncHandler(async (req, res) => {
+/*exports.getProductDetail = asyncHandler(async (req, res) => {
   const { date, id } = req.query;
   const dbPrefix = req.dbPrefix;
 
@@ -219,6 +219,47 @@ exports.getProductDetail = asyncHandler(async (req, res) => {
     },
   };
 
+  const validatedData = BatchDetailSchema.parse(payload);
+  return res.json(validatedData);
+});*/
+exports.getProductDetail = asyncHandler(async (req, res) => {
+  const { date, id } = req.query;
+  const dbPrefix = req.dbPrefix;
+
+  // 1. Obtener Maestro
+  const { getProductModelByTenant } = require("../products/products.model");
+  const ProductModel = getProductModelByTenant(dbPrefix);
+
+  // Buscamos el producto, si no existe, productInfo será null
+  const productInfo = await ProductModel.findOne({ id: id })
+    .select("alternativeDescription unitsPerCrate")
+    .lean();
+
+  // 2. Obtener Temporal
+  const temporalData = await inventoryService.getProductCountById(
+    dbPrefix,
+    date,
+    id,
+  );
+
+  // 3. BLINDAJE: Construimos la base de forma segura.
+  // Si no hay productInfo, usamos al menos el ID que viene de la query.
+  const baseProduct = getInitialProductState(productInfo || { id: id });
+
+  // 4. Consolidamos el Payload final
+  const payload = {
+    tenantId: req.query.tenantId || dbPrefix,
+    date: date,
+    product: {
+      // Forzamos que el ID siempre sea el id de la query si baseProduct fallara
+      id: baseProduct.id || id,
+      alternativeDescription: baseProduct.alternativeDescription,
+      unitsPerCrate: baseProduct.unitsPerCrate,
+      batchLines: temporalData?.batchLines || [],
+    },
+  };
+
+  // 5. Validación
   const validatedData = BatchDetailSchema.parse(payload);
   return res.json(validatedData);
 });
