@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+
 //const { getDbTenant } = require("../../config/db");
 
 /**
@@ -241,9 +242,64 @@ const saveTemporaryCount = async (dbPrefix, data) => {
   );
 };
 
+/**
+ * Guarda el recuento definitivo por artículo y cambia el status del día
+ */
+const finalizeDayTransaction = async (dbPrefix, data) => {
+  const { tenantId, countDate, operatorName, products, comments } = data;
+  const dbTenant = mongoose.connection.useDb("tracesync_tenant");
+
+  // Nombres de colecciones dinámicas
+  const statusColl = dbTenant.collection(`${dbPrefix}_ch_day_status`);
+  const recordColl = dbTenant.collection(
+    `${dbPrefix}_ch_final_inventory_records`,
+  );
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // 1. Guardar en mp_ch_final_inventory_records
+    await recordColl.insertOne(
+      {
+        countDate,
+        inventorySnapshot: products,
+        operatorName,
+        tenantId,
+        closedAt: new Date(),
+      },
+      { session },
+    );
+
+    // 2. Guardar/Actualizar en mp_ch_day_status
+    await statusColl.updateOne(
+      { date: countDate },
+      {
+        $set: {
+          date: countDate,
+          finalized: true,
+          finalizedAt: new Date(),
+          finalizedBy: operatorName,
+          comments,
+        },
+      },
+      { upsert: true, session },
+    );
+
+    await session.commitTransaction();
+    return { success: true };
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
+};
+
 module.exports = {
   getInventorySummary,
   isDayFinalized,
   getProductCountById,
   saveTemporaryCount,
+  finalizeDayTransaction,
 };

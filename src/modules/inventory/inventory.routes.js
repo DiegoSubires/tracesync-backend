@@ -9,6 +9,7 @@ const {
   QueryIdSchema,
   validateBody,
   SaveTemporaryCountSchema,
+  FinalizeInventoryPayloadSchema,
 } = require("./schemas/inventory.schema");
 
 /**
@@ -181,3 +182,57 @@ router.put(
 );
 
 module.exports = router;
+
+/**
+ * @openapi
+ * /inventory/finalize:
+ * post:
+ * summary: Consolida el recuento definitivo y cierra la jornada del inventario
+ * description: Guarda el inventario final (snapshot) y marca la jornada como cerrada.
+ * tags: [Inventory]
+ * parameters:
+ * - in: query
+ * name: tenantId
+ * required: true
+ * schema: { type: string }
+ * requestBody:
+ * required: true
+ * content:
+ * application/json:
+ * schema:
+ * type: object
+ * required: [countDate, operatorName, products]
+ * properties:
+ * countDate: { type: string, format: date, example: "2026-06-15" }
+ * operatorName: { type: string, example: "Nidia" }
+ * products:
+ * type: array
+ * items:
+ * type: object
+ * properties:
+ * productId: { type: string }
+ * batchLines:
+ * type: array
+ * items:
+ * type: object
+ * properties:
+ * batch: { type: string }
+ * crates: { type: integer }
+ * elapsedDays: { type: integer }
+ * looseUnits: { type: integer }
+ * packingDate: { type: string }
+ * quantity: { type: integer }
+ * responses:
+ * 200:
+ * description: Jornada consolidada y cerrada con éxito.
+ * 400:
+ * description: Datos inválidos o falta de parámetros.
+ * 500:
+ * description: Error interno al procesar la transacción.
+ */
+router.post(
+  "/finalize",
+  tenantResolver,
+  validateBody(FinalizeInventoryPayloadSchema),
+  inventoryController.finalizeDay,
+);

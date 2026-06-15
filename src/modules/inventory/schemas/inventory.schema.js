@@ -109,6 +109,38 @@ const validateBody = (schema) => (req, res, next) => {
   }
 };
 
+// Esquemas para guardar los recuentos finalizados
+
+const FinalizeInventorySchema = z.object({
+  tenantId: z.string().min(1),
+  countDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  operatorName: z.string().min(1),
+  products: z.array(ProductFinalizationSchema),
+});
+
+const BatchLineFinalSchema = z.object({
+  batch: z.string(),
+  crates: z.number().int().nonnegative(),
+  elapsedDays: z.number().int().nonnegative(),
+  looseUnits: z.union([z.number().int(), z.string()]),
+  packingDate: z.string(),
+  quantity: z.number().int().nonnegative(),
+});
+
+const ProductFinalizationSchema = z.object({
+  productId: z.string(),
+  batchLines: z.array(BatchLineFinalSchema),
+});
+
+// Contrato que recibirá el POST /finalize
+const FinalizeInventoryPayloadSchema = z.object({
+  tenantId: z.string().min(1),
+  countDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  operatorName: z.string().min(1),
+  products: z.array(ProductFinalizationSchema),
+  comments: z.string().optional().default(""),
+});
+
 module.exports = {
   InventorySchema,
   HomeSummarySchema,
@@ -121,4 +153,6 @@ module.exports = {
   BatchDetailSchema,
   SaveTemporaryCountSchema,
   validateBody,
+  FinalizeInventorySchema,
+  FinalizeInventoryPayloadSchema,
 };

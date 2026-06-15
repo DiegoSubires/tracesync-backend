@@ -5,6 +5,7 @@ const {
   BatchDetailSchema,
   SaveTemporaryCountSchema,
 } = require("./schemas/inventory.schema");
+const asyncHandler = require("../../utils/asyncHandler");
 
 exports.getDaySummary = async (req, res) => {
   console.log(`\n📢 [PETICIÓN ENTRANTE] GET a la ruta: /api/inventory/summary`);
@@ -154,7 +155,7 @@ exports.getProductDetail = async (req, res) => {
 /**
  * Guarda el recuento temporal por artículo
  */
-exports.saveTemporaryCount = async (req, res) => {
+/*exports.saveTemporaryCount = async (req, res) => {
   try {
     // 1. Validamos el cuerpo con Zod
     const validatedData = SaveTemporaryCountSchema.parse(req.body);
@@ -174,4 +175,26 @@ exports.saveTemporaryCount = async (req, res) => {
       stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
-};
+};*/
+
+exports.saveTemporaryCount = asyncHandler(async (req, res) => {
+  const validatedData = SaveTemporaryCountSchema.parse(req.body);
+  const dbPrefix = req.dbPrefix;
+  await inventoryService.saveTemporaryCount(dbPrefix, validatedData);
+  res.json({ success: true, message: "Guardado con éxito." });
+});
+
+exports.finalizeDay = asyncHandler(async (req, res) => {
+  // 1. Validamos toda la estructura con el nuevo schema
+  const data = FinalizeInventorySchema.parse(req.body);
+  const dbPrefix = req.dbPrefix;
+
+  // 2. Llamamos a una única función en el servicio que gestiona todo
+  const result = await inventoryService.finalizeDayTransaction(dbPrefix, data);
+
+  return res.json({
+    success: true,
+    message: "Jornada consolidada y cerrada con éxito.",
+    result,
+  });
+});
