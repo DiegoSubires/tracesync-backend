@@ -5,7 +5,7 @@ const {
   BatchDetailSchema,
   SaveTemporaryCountSchema,
 } = require("./schemas/inventory.schema");
-const asyncHandler = require("../../utils/asyncHandler").default;
+const asyncHandler = require("../../utils/asyncHandler");
 const { getInitialProductState } = require("../../utils/inventoryDefaults");
 
 exports.getDaySummary = async (req, res) => {
