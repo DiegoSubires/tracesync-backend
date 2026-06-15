@@ -111,13 +111,6 @@ const validateBody = (schema) => (req, res, next) => {
 
 // Esquemas para guardar los recuentos finalizados
 
-const FinalizeInventorySchema = z.object({
-  tenantId: z.string().min(1),
-  countDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  operatorName: z.string().min(1),
-  products: z.array(ProductFinalizationSchema),
-});
-
 const BatchLineFinalSchema = z.object({
   batch: z.string(),
   crates: z.number().int().nonnegative(),
@@ -140,6 +133,13 @@ const FinalizeInventoryPayloadSchema = z.object({
   operatorName: z.string().min(1),
   products: z.array(ProductFinalizationSchema), // Ahora ProductFinalizationSchema ya existe
   comments: z.string().optional().default(""),
+});
+
+const FinalizeInventorySchema = z.object({
+  tenantId: z.string().min(1),
+  countDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  operatorName: z.string().min(1),
+  products: z.array(ProductFinalizationSchema),
 });
 
 module.exports = {
