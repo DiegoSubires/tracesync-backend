@@ -142,7 +142,7 @@ router.get(
 router.get(
   "/product-id",
   tenantResolver,
-  validateQuery(QuerySchema),
+  validateQuery(QueryIdSchema),
   inventoryController.getProductDetail,
 );
 
