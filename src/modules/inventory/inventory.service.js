@@ -194,10 +194,10 @@ const isDayFinalized = async (dbPrefix, dateStr) => {
     return false;
   }
 
-  console.log(
+  /*console.log(
     `✅ [SERVICE] ¡Documento encontrado!:`,
     JSON.stringify(dayRecord),
-  );
+  );*/
 
   // Retornamos el valor booleano real del documento
   return dayRecord.finalized === true || dayRecord.status === "finalized";
@@ -249,17 +249,17 @@ const finalizeDayTransaction = async (dbPrefix, data) => {
   const { tenantId, countDate, operatorName, products, comments } = data;
   const dbTenant = mongoose.connection.useDb("tracesync_tenant");
 
-  // Nombres de colecciones dinámicas
   const statusColl = dbTenant.collection(`${dbPrefix}_ch_day_status`);
   const recordColl = dbTenant.collection(
     `${dbPrefix}_ch_final_inventory_records`,
   );
+  const tempColl = dbTenant.collection(`${dbPrefix}_ch_temporary_counts`); // Nueva
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    // 1. Guardar en mp_ch_final_inventory_records
+    // 1. Guardar histórico
     await recordColl.insertOne(
       {
         countDate,
@@ -271,12 +271,11 @@ const finalizeDayTransaction = async (dbPrefix, data) => {
       { session },
     );
 
-    // 2. Guardar/Actualizar en mp_ch_day_status
+    // 2. Marcar como finalizado
     await statusColl.updateOne(
       { date: countDate },
       {
         $set: {
-          date: countDate,
           finalized: true,
           finalizedAt: new Date(),
           finalizedBy: operatorName,
@@ -285,6 +284,9 @@ const finalizeDayTransaction = async (dbPrefix, data) => {
       },
       { upsert: true, session },
     );
+
+    // 3. LIMPIEZA: Borrar los temporales
+    await tempColl.deleteMany({ countDate }, { session });
 
     await session.commitTransaction();
     return { success: true };

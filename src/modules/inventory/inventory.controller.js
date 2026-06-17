@@ -35,10 +35,10 @@ exports.getDaySummary = async (req, res) => {
     /*console.log(
       `\n📊 [Inventory.controller.getDaySummary]: "payload" | dbPrefix: "${JSON.stringify(payloadParaValidar, null, 2)}"`,
     );*/
-    console.log(
+    /*console.log(
       "🔍 Payload completo a validar:",
       JSON.stringify(payload, null, 2),
-    );
+    );*/
 
     const validatedData = HomeSummarySchema.parse(payload);
 
@@ -61,9 +61,9 @@ exports.getDaySummary = async (req, res) => {
  * Obtiene el estado de cierre (finalizado) de una jornada específica
  */
 exports.getDayStatus = async (req, res) => {
-  console.log(
+  /*console.log(
     `\n📢 [PETICIÓN ENTRANTE] GET a la ruta: /api/inventory/day-status`,
-  );
+  );*/
 
   try {
     // 🎯 Capturamos los datos que ya han sido limpiados y validados por Zod en la ruta
@@ -289,6 +289,9 @@ exports.getProductDetail = asyncHandler(async (req, res) => {
   }
 };*/
 
+/**
+ * Guarda el recuento temporal por artículo
+ */
 exports.saveTemporaryCount = asyncHandler(async (req, res) => {
   const validatedData = SaveTemporaryCountSchema.parse(req.body);
   const dbPrefix = req.dbPrefix;
@@ -296,7 +299,13 @@ exports.saveTemporaryCount = asyncHandler(async (req, res) => {
   res.json({ success: true, message: "Guardado con éxito." });
 });
 
-exports.finalizeDay = asyncHandler(async (req, res) => {
+/**
+ * Guarda el recuento finalizado de todos los productos,
+ * recuperando los archivos temporales, y guardando en finalizado
+ * Borra los archivos temporales que se habían consultado
+ * Cambia el status del día del recuento.
+ */
+/*exports.finalizeDay = asyncHandler(async (req, res) => {
   // 1. Validamos toda la estructura con el nuevo schema
   const data = FinalizeInventorySchema.parse(req.body);
   const dbPrefix = req.dbPrefix;
@@ -309,4 +318,30 @@ exports.finalizeDay = asyncHandler(async (req, res) => {
     message: "Jornada consolidada y cerrada con éxito.",
     result,
   });
+});*/
+
+exports.finalizeDay = asyncHandler(async (req, res) => {
+  const { tenantId, countDate, operatorName } = req.body;
+  const dbPrefix = req.dbPrefix;
+
+  const dbTenant = mongoose.connection.useDb("tracesync_tenant");
+  const tempColl = dbTenant.collection(`${dbPrefix}_ch_temporary_counts`);
+
+  const allTemporaryCounts = await tempColl.find({ countDate }).toArray();
+
+  if (allTemporaryCounts.length === 0) {
+    return res
+      .status(400)
+      .json({ error: "No hay datos temporales para consolidar." });
+  }
+
+  await inventoryService.finalizeDayTransaction(dbPrefix, {
+    tenantId,
+    countDate,
+    operatorName,
+    products: allTemporaryCounts, // Aquí están los batchLines reales
+    comments: "Finalización automatizada desde backend",
+  });
+
+  res.json({ success: true });
 });
