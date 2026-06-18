@@ -181,8 +181,6 @@ router.put(
   inventoryController.saveTemporaryCount,
 );
 
-module.exports = router;
-
 /**
  * @openapi
  * /inventory/finalize:
@@ -236,3 +234,5 @@ router.post(
   validateBody(FinalizeInventoryPayloadSchema),
   inventoryController.finalizeDay,
 );
+
+module.exports = router;
