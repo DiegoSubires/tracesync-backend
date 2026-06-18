@@ -140,6 +140,7 @@ const FinalizeInventorySchema = z.object({
   countDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   operatorName: z.string().min(1),
   //products: z.array(ProductFinalizationSchema),
+  comments: z.string().optional(),
 });
 
 module.exports = {
