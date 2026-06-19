@@ -210,22 +210,21 @@ exports.finalizeDay = asyncHandler(async (req, res) => {
  * Obtiene el csv del recuento finalizado
  */
 exports.exportToExcelCsv = asyncHandler(async (req, res) => {
-  const { date } = req.query;
+  // Ahora req.query ya ha sido validado por QuerySchema
+  const { date, tenantId } = req.query;
   const dbPrefix = req.dbPrefix;
 
-  if (!date) {
-    return res.status(400).send("Falta el parámetro 'date'.");
-  }
+  console.log(
+    `🔍 [DEBUG] Solicitud recibida: Tenant: ${tenantId}, Fecha: ${date}`,
+  );
 
   const dbTenant = mongoose.connection.useDb("tracesync_tenant");
-
-  // 1. Usamos dbPrefix para acceder a las colecciones
   const productsColl = dbTenant.collection(`${dbPrefix}_products`);
   const finalColl = dbTenant.collection(
     `${dbPrefix}_ch_final_inventory_records`,
   );
 
-  // 2. Traer catálogo (mantiene tus filtros de categoría)
+  // 1. Traer datos
   const products = await productsColl
     .find({
       visible: { $nin: [false, "false"] },
@@ -235,8 +234,21 @@ exports.exportToExcelCsv = asyncHandler(async (req, res) => {
     })
     .toArray();
 
-  // 3. Traer el record final usando el esquema de la nueva arquitectura
   const finalRecord = await finalColl.findOne({ countDate: date });
+
+  // 2. Validación temprana (Aquí es donde controlas si falta info)
+  console.log(
+    `🔍 [DEBUG] Productos: ${products.length}, Record encontrado: ${!!finalRecord}`,
+  );
+
+  if (products.length === 0) {
+    return res.status(404).send("No se encontraron productos para exportar.");
+  }
+  if (!finalRecord) {
+    return res
+      .status(404)
+      .send(`No hay registro de inventario para la fecha ${date}.`);
+  }
 
   // 4. Mapear y sumar las quantities de todos los lotes agrupándolas por su productId
   const quantityMap = {};
@@ -339,10 +351,15 @@ exports.exportToExcelCsv = asyncHandler(async (req, res) => {
   console.log("====================================================\n");
 
   // 7. Respuesta
+  res.setHeader("X-Debug-Tenant", tenantId);
+  res.setHeader("X-Debug-Date", date);
+  res.setHeader("X-Debug-Products-Count", products.length);
+
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
   res.setHeader(
     "Content-Disposition",
-    `attachment; filename=Stock_${date}.csv`,
+    `attachment; filename=Stock_${date}_${tenantId}.csv`,
   );
+
   return res.status(200).send(csvContent);
 });
