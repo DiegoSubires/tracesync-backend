@@ -321,13 +321,31 @@ exports.saveTemporaryCount = asyncHandler(async (req, res) => {
 });*/
 
 exports.finalizeDay = asyncHandler(async (req, res) => {
-  const { tenantId, countDate, operatorName } = req.body;
+  //const { tenantId, countDate, operatorName } = req.body;
+  console.log("📥 [Controlador] Cuerpo recibido:", req.body);
+  console.log("📥 [Controlador] Query recibida:", req.query);
+
+  const { countDate, operatorName, comments } = FinalizeInventorySchema.parse(
+    req.body,
+  );
+  const tenantId = req.query.tenantId;
+  if (!tenantId) {
+    return res.status(400).json({ error: "Falta el tenantId en la query" });
+  }
+
   const dbPrefix = req.dbPrefix;
+
+  console.log(
+    `🛠️ [Backend] Finalizando para Tenant: ${tenantId}, Fecha: ${countDate}`,
+  );
 
   const dbTenant = mongoose.connection.useDb("tracesync_tenant");
   const tempColl = dbTenant.collection(`${dbPrefix}_ch_temporary_counts`);
 
   const allTemporaryCounts = await tempColl.find({ countDate }).toArray();
+  console.log(
+    `🔍 [Controlador] Registros temporales encontrados: ${allTemporaryCounts.length}`,
+  );
 
   if (allTemporaryCounts.length === 0) {
     return res
@@ -339,8 +357,8 @@ exports.finalizeDay = asyncHandler(async (req, res) => {
     tenantId,
     countDate,
     operatorName,
-    products: allTemporaryCounts, // Aquí están los batchLines reales
-    comments: "Finalización automatizada desde backend",
+    products: allTemporaryCounts,
+    comments: comments || "Finalización automatizada desde backend",
   });
 
   res.json({ success: true });
