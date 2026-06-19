@@ -100,7 +100,7 @@ const SaveTemporaryCountSchema = z.object({
 
 const validateBody = (schema) => (req, res, next) => {
   try {
-    req.body = schema.parse(req.body); // Sobrescribe el body con los datos validados
+    req.body = schema.parse(req.body);
     next();
   } catch (error) {
     return res
@@ -111,14 +111,14 @@ const validateBody = (schema) => (req, res, next) => {
 
 // Esquemas para guardar los recuentos finalizados
 
-const BatchLineFinalSchema = z.object({
+/*const BatchLineFinalSchema = z.object({
   batch: z.string(),
   crates: z.number().int().nonnegative(),
   elapsedDays: z.number().int().nonnegative(),
   looseUnits: z.union([z.number().int(), z.string()]),
   packingDate: z.string(),
   quantity: z.number().int().nonnegative(),
-});
+});*/
 
 // 2. Luego la pieza intermedia (ProductFinalizationSchema) que usa BatchLineFinalSchema
 /*const ProductFinalizationSchema = z.object({
