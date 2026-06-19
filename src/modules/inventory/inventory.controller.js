@@ -4,6 +4,7 @@ const {
   HomeSummarySchema,
   BatchDetailSchema,
   SaveTemporaryCountSchema,
+  FinalizeInventorySchema,
 } = require("./schemas/inventory.schema");
 const asyncHandler = require("../../utils/asyncHandler");
 const { getInitialProductState } = require("../../utils/inventoryDefaults");
