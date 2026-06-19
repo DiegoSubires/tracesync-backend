@@ -143,6 +143,14 @@ const FinalizeInventorySchema = z.object({
   comments: z.string().optional(),
 });
 
+// Esquema para validar la petición de exportación a Escel
+
+const ExportExcelQuerySchema = z.object({
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "El formato de fecha debe ser YYYY-MM-DD"),
+});
+
 module.exports = {
   InventorySchema,
   HomeSummarySchema,
@@ -156,4 +164,5 @@ module.exports = {
   SaveTemporaryCountSchema,
   validateBody,
   FinalizeInventorySchema,
+  ExportExcelQuerySchema,
 };

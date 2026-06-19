@@ -10,6 +10,7 @@ const {
   validateBody,
   SaveTemporaryCountSchema,
   FinalizeInventorySchema,
+  ExportExcelQuerySchema,
 } = require("./schemas/inventory.schema");
 
 /**
@@ -233,6 +234,40 @@ router.post(
   tenantResolver,
   validateBody(FinalizeInventorySchema),
   inventoryController.finalizeDay,
+);
+
+/**
+ * @openapi
+ * /inventory/export-excel:
+ * get:
+ * summary: Exporta el recuento consolidado a un archivo CSV
+ * tags: [Inventory]
+ * parameters:
+ * - in: query
+ * name: tenantId
+ * required: true
+ * schema: { type: string }
+ * - in: query
+ * name: date
+ * required: true
+ * schema: { type: string, format: date }
+ * responses:
+ * 200:
+ * description: Archivo CSV generado con éxito.
+ * content:
+ * text/csv:
+ * schema:
+ * type: string
+ * 400:
+ * description: Parámetros faltantes o inválidos.
+ * 500:
+ * description: Error interno al procesar el volcado.
+ */
+router.get(
+  "/export-excel",
+  tenantResolver,
+  validateQuery(ExportExcelQuerySchema),
+  inventoryController.exportToExcelCsv,
 );
 
 module.exports = router;

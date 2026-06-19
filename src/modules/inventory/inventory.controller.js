@@ -9,6 +9,9 @@ const {
 const asyncHandler = require("../../utils/asyncHandler");
 const { getInitialProductState } = require("../../utils/inventoryDefaults");
 
+/**
+ * Obtiene los productos temporales de una jornada específica (versión Home)
+ */
 exports.getDaySummary = async (req, res) => {
   console.log(`\n📢 [PETICIÓN ENTRANTE] GET a la ruta: /api/inventory/summary`);
 
@@ -99,130 +102,8 @@ exports.getDayStatus = async (req, res) => {
 };
 
 /**
- * Obtiene el estado de cierre (finalizado) de una jornada específica
+ * Obtiene los productos temporales de una jornada específica (versión BatchDetail)
  */
-/*exports.getProductDetail = async (req, res) => {
-  console.log(
-    `\n📢 [PETICIÓN ENTRANTE] GET a la ruta: /api/inventory/ProductId`,
-  );
-
-  try {
-    const { date, id } = req.query;
-    const dbPrefix = req.dbPrefix;
-
-    const data = await inventoryService.getProductCountById(dbPrefix, date, id);
-
-    if (!data) {
-      return res.status(404).json({ error: "Producto no encontrado" });
-    }
-
-    const payload = {
-      tenantId: req.query.tenantId || dbPrefix,
-      date: date,
-      product: {
-        alternativeDescription:
-          data.alternativeDescription || "Sin descripción",
-        id: data.id || id,
-        unitsPerCrate: data.unitsPerCrate,
-        batchLines: data.batchLines || [],
-      },
-    };
-
-    /*console.log(
-      `\n📊 [Inventory.controller.getDaySummary]: "payload" | dbPrefix: "${JSON.stringify(payloadParaValidar, null, 2)}"`,
-    );//
-
-    const validatedData = BatchDetailSchema.parse(payload);
-
-    /*console.log(
-      `\n📊 [Inventory.controller.getDaySummary]: "validatedData" | dbPrefix: "${JSON.stringify(validatedData, null, 2)}"`,
-    );//
-
-    //console.log("📤 [BACKEND] Respuesta Home enviada correctamente.");
-    return res.json(validatedData);
-  } catch (error) {
-    // Si el error es de Zod, esto te ayudará a saber qué campo falló
-    if (error.name === "ZodError") {
-      console.error("💥 Error de validación Zod:", error.issues);
-      return res
-        .status(400)
-        .json({ error: "Datos de producto inválidos", details: error.issues });
-    }
-
-    console.error("💥 Error crítico en getProductDetail:", error);
-    return res.status(500).json({ error: "Error al obtener resumen" });
-  }
-};*/
-
-/*exports.getProductDetail = asyncHandler(async (req, res) => {
-  const { date, id } = req.query;
-  const dbPrefix = req.dbPrefix;
-
-  // 1. Obtenemos el producto del MAESTRO (Catálogo)
-  const { getProductModelByTenant } = require("../products/products.model");
-  const ProductModel = getProductModelByTenant(dbPrefix);
-  const productInfo = await ProductModel.findOne({ id: id })
-    .select("alternativeDescription unitsPerCrate")
-    .lean();
-
-  // 2. Obtenemos el recuento temporal SI EXISTE
-  const temporalData = await inventoryService.getProductCountById(
-    dbPrefix,
-    date,
-    id,
-  );
-
-  // 3. Consolidamos: Si no hay temporal, usamos el inicializador, si hay, mezclamos.
-  const payload = {
-    tenantId: req.query.tenantId || dbPrefix,
-    date: date,
-    product: {
-      id: id,
-      alternativeDescription:
-        productInfo?.alternativeDescription || "Sin descripción",
-      unitsPerCrate: Number(productInfo?.unitsPerCrate ?? 0),
-      // Aquí aplicamos la lógica: si hay datos temporales, úsalos; si no, devuelve []
-      batchLines: temporalData?.batchLines || [],
-    },
-  };
-
-  const validatedData = BatchDetailSchema.parse(payload);
-  return res.json(validatedData);
-});*/
-/*exports.getProductDetail = asyncHandler(async (req, res) => {
-  const { date, id } = req.query;
-  const dbPrefix = req.dbPrefix;
-
-  // 1. Obtenemos el maestro y el temporal
-  const { getProductModelByTenant } = require("../products/products.model");
-  const ProductModel = getProductModelByTenant(dbPrefix);
-  const productInfo = await ProductModel.findOne({ id: id })
-    .select("alternativeDescription unitsPerCrate")
-    .lean();
-
-  const temporalData = await inventoryService.getProductCountById(
-    dbPrefix,
-    date,
-    id,
-  );
-
-  // 2. Usamos el inicializador para obtener una base limpia
-  // Si no hay productInfo, al menos inicializamos con el ID
-  const baseProduct = getInitialProductState(productInfo || { id });
-
-  // 3. Consolidamos: Mezclamos la base con los datos temporales si existen
-  const payload = {
-    tenantId: req.query.tenantId || dbPrefix,
-    date: date,
-    product: {
-      ...baseProduct,
-      batchLines: temporalData?.batchLines || [],
-    },
-  };
-
-  const validatedData = BatchDetailSchema.parse(payload);
-  return res.json(validatedData);
-});*/
 exports.getProductDetail = asyncHandler(async (req, res) => {
   const { date, id } = req.query;
   const dbPrefix = req.dbPrefix;
@@ -268,31 +149,6 @@ exports.getProductDetail = asyncHandler(async (req, res) => {
 /**
  * Guarda el recuento temporal por artículo
  */
-/*exports.saveTemporaryCount = async (req, res) => {
-  try {
-    // 1. Validamos el cuerpo con Zod
-    const validatedData = SaveTemporaryCountSchema.parse(req.body);
-
-    // 2. Usamos el dbPrefix que ya resuelves en tu middleware
-    const dbPrefix = req.dbPrefix;
-
-    await inventoryService.saveTemporaryCount(dbPrefix, validatedData);
-
-    return res.json({ success: true, message: "Borrador guardado con éxito." });
-  } catch (error) {
-    console.error("💥 ERROR DETALLADO EN BACKEND:", error);
-
-    return res.status(500).json({
-      error: "Error al guardar el borrador",
-      details: error.message,
-      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
-    });
-  }
-};*/
-
-/**
- * Guarda el recuento temporal por artículo
- */
 exports.saveTemporaryCount = asyncHandler(async (req, res) => {
   const validatedData = SaveTemporaryCountSchema.parse(req.body);
   const dbPrefix = req.dbPrefix;
@@ -306,21 +162,6 @@ exports.saveTemporaryCount = asyncHandler(async (req, res) => {
  * Borra los archivos temporales que se habían consultado
  * Cambia el status del día del recuento.
  */
-/*exports.finalizeDay = asyncHandler(async (req, res) => {
-  // 1. Validamos toda la estructura con el nuevo schema
-  const data = FinalizeInventorySchema.parse(req.body);
-  const dbPrefix = req.dbPrefix;
-
-  // 2. Llamamos a una única función en el servicio que gestiona todo
-  const result = await inventoryService.finalizeDayTransaction(dbPrefix, data);
-
-  return res.json({
-    success: true,
-    message: "Jornada consolidada y cerrada con éxito.",
-    result,
-  });
-});*/
-
 exports.finalizeDay = asyncHandler(async (req, res) => {
   //const { tenantId, countDate, operatorName } = req.body;
   console.log("📥 [Controlador] Cuerpo recibido:", req.body);
@@ -363,4 +204,145 @@ exports.finalizeDay = asyncHandler(async (req, res) => {
   });
 
   res.json({ success: true });
+});
+
+/**
+ * Obtiene el csv del recuento finalizado
+ */
+exports.exportToExcelCsv = asyncHandler(async (req, res) => {
+  const { date } = req.query;
+  const dbPrefix = req.dbPrefix;
+
+  if (!date) {
+    return res.status(400).send("Falta el parámetro 'date'.");
+  }
+
+  const dbTenant = mongoose.connection.useDb("tracesync_tenant");
+
+  // 1. Usamos dbPrefix para acceder a las colecciones
+  const productsColl = dbTenant.collection(`${dbPrefix}_products`);
+  const finalColl = dbTenant.collection(
+    `${dbPrefix}_ch_final_inventory_records`,
+  );
+
+  // 2. Traer catálogo (mantiene tus filtros de categoría)
+  const products = await productsColl
+    .find({
+      visible: { $nin: [false, "false"] },
+      category: {
+        $in: ["Frescos Granel", "Frescos Pequeña", " Frescos Pequeña"],
+      },
+    })
+    .toArray();
+
+  // 3. Traer el record final usando el esquema de la nueva arquitectura
+  const finalRecord = await finalColl.findOne({ countDate: date });
+
+  // 4. Mapear y sumar las quantities de todos los lotes agrupándolas por su productId
+  const quantityMap = {};
+  if (finalRecord && finalRecord.inventorySnapshot) {
+    console.log(
+      `   -> Elementos dentro de 'inventorySnapshot': ${finalRecord.inventorySnapshot.length} artículos.`,
+    );
+    finalRecord.inventorySnapshot.forEach((item) => {
+      let totalProductQty = 0;
+      if (item.batchLines && item.batchLines.length > 0) {
+        item.batchLines.forEach((line) => {
+          totalProductQty += Number(line.quantity || 0);
+        });
+      }
+      if (item.productId) {
+        quantityMap[item.productId] =
+          (quantityMap[item.productId] || 0) + totalProductQty;
+      }
+    });
+  }
+
+  // 5. Organizar los productos en un diccionario de ARRAYS usando el sortOrder como clave
+  // 🔥 CLAVE: Usamos arrays para evitar que "Frescos Granel" pise a "Frescos Pequeña" si repiten sortOrder
+  const productBySortOrder = {};
+  let maxSortOrder = 3; // Inicializamos en 3 como mínimo estándar
+
+  products.forEach((prod) => {
+    const so = Number(prod.sortOrder);
+    if (!isNaN(so)) {
+      if (!productBySortOrder[so]) {
+        productBySortOrder[so] = [];
+      }
+      productBySortOrder[so].push(prod);
+      if (so > maxSortOrder) {
+        maxSortOrder = so; // Buscamos el techo del bucle dinámicamente
+      }
+    }
+  });
+
+  console.log(`🔢 [Paso 5] Mapeo de índices completado.`);
+  console.log(
+    `   -> Techo superior determinado del bucle (maxSortOrder): ${maxSortOrder}`,
+  );
+
+  // 6. Construcción del CSV con BOM UTF-8 para asegurar la compatibilidad con Excel
+  let csvContent = "\uFEFF";
+
+  // Fila 1: Fecha del recuento
+  csvContent += `"${date}"\n`;
+
+  // Fila 2: Literal de control "STOCK"
+  csvContent += "STOCK\n";
+
+  let filasTotalesEscritas = 2;
+  let coincidenciaPintadas = 0;
+
+  // Fila 3 en adelante: Mapeo estricto indexado por fila/sortOrder
+  for (let i = 3; i <= maxSortOrder; i++) {
+    const prodsInSlot = productBySortOrder[i] || [];
+
+    // Caso A: El sortOrder está vacío/saltado en la numeración del catálogo maestro
+    if (prodsInSlot.length === 0) {
+      csvContent += "\n";
+      filasTotalesEscritas++;
+      continue;
+    }
+
+    // Sumamos las cantidades de todos los productos que compartan este casillero/fila
+    let slotQty = 0;
+    prodsInSlot.forEach((prod) => {
+      const qtyById = quantityMap[prod.id] || 0;
+      const qtyByOid = prod._id ? quantityMap[prod._id.toString()] || 0 : 0;
+      const finalProdQty = qtyById || qtyByOid;
+
+      if (finalProdQty > 0) {
+        slotQty += finalProdQty;
+        coincidenciaPintadas++;
+        console.log(
+          `   🎯 [MATCH STOCK] Fila Excel [${i}] -> Code: "${prod.code}" | Cat: "${prod.category}" | Qty: ${finalProdQty}`,
+        );
+      }
+    });
+
+    // Caso B y C: Inyección del stock consolidado en el renglón correspondiente
+    if (slotQty === 0) {
+      csvContent += "\n";
+    } else {
+      csvContent += `${slotQty}\n`;
+    }
+    filasTotalesEscritas++;
+  }
+
+  console.log(`📊 [Fin de Generación] Bucle de filas completado.`);
+  console.log(
+    `   -> Filas escritas totales en el archivo CSV: ${filasTotalesEscritas}`,
+  );
+  console.log(
+    `   -> Número de productos que SÍ encontraron coincidencia y pintaron datos: ${coincidenciaPintadas}`,
+  );
+  console.log("====================================================\n");
+
+  // 7. Respuesta
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename=Stock_${date}.csv`,
+  );
+  return res.status(200).send(csvContent);
 });
