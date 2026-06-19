@@ -10,9 +10,11 @@ const asyncHandler = (fn) => (req, res, next) => {
         .json({ error: "Validación fallida", details: error.issues });
     }
 
-    res
-      .status(500)
-      .json({ error: "Error interno del servidor", message: error.message });
+    res.status(500).json({
+      error: "Error interno del servidor",
+      message: error.message,
+      details: error.stack,
+    });
   });
 };
 
