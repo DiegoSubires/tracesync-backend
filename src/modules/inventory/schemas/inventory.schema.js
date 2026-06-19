@@ -136,7 +136,7 @@ const FinalizeInventoryPayloadSchema = z.object({
 });*/
 
 const FinalizeInventorySchema = z.object({
-  tenantId: z.string().min(1),
+  //tenantId: z.string().min(1),
   countDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   operatorName: z.string().min(1),
   //products: z.array(ProductFinalizationSchema),
