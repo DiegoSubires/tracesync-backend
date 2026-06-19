@@ -9,7 +9,7 @@ const {
   QueryIdSchema,
   validateBody,
   SaveTemporaryCountSchema,
-  FinalizeInventoryPayloadSchema,
+  FinalizeInventorySchema,
 } = require("./schemas/inventory.schema");
 
 /**
@@ -231,7 +231,7 @@ router.put(
 router.post(
   "/finalize",
   tenantResolver,
-  validateBody(FinalizeInventoryPayloadSchema),
+  validateBody(FinalizeInventorySchema),
   inventoryController.finalizeDay,
 );
 
