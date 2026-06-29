@@ -266,7 +266,7 @@ router.post(
 router.get(
   "/export-excel",
   tenantResolver,
-  validateQuery(ExportExcelQuerySchema),
+  validateQuery(QuerySchema),
   inventoryController.exportToExcelCsv,
 );
 
