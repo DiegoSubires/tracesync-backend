@@ -229,7 +229,7 @@ exports.exportToExcelCsv = asyncHandler(async (req, res) => {
     .find({
       visible: { $nin: [false, "false"] },
       category: {
-        $in: ["Frescos Granel", "Frescos Pequeña", " Frescos Pequeña"],
+        $in: ["Frescos Granel", "Frescos Pequeña", "Frescos Pequeña"],
       },
     })
     .toArray();
