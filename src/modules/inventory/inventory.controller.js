@@ -219,7 +219,7 @@ exports.exportToExcelCsv = asyncHandler(async (req, res) => {
   );
 
   const dbTenant = mongoose.connection.useDb("tracesync_tenant");
-  const productsColl = dbTenant.collection(`${dbPrefix}_products`);
+  const productsColl = dbTenant.collection(`${dbPrefix}_chamber_products`);
   const finalColl = dbTenant.collection(
     `${dbPrefix}_ch_final_inventory_records`,
   );
