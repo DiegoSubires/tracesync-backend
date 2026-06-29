@@ -214,6 +214,16 @@ exports.exportToExcelCsv = asyncHandler(async (req, res) => {
   const { date, tenantId } = req.query;
   const dbPrefix = req.dbPrefix;
 
+  const muestra = await productsColl.find({}).limit(5).toArray();
+  console.log(
+    "🔍 [DEBUG] Muestra de los primeros 5 productos en la BD:",
+    JSON.stringify(muestra, null, 2),
+  );
+
+  // --- Verificamos categorías únicas para comparar con tu filtro ---
+  const categoriasUnicas = await productsColl.distinct("category");
+  console.log("🔍 [DEBUG] Categorías encontradas en la BD:", categoriasUnicas);
+
   console.log(
     `🔍 [DEBUG] Solicitud recibida: Tenant: ${tenantId}, Fecha: ${date}`,
   );
